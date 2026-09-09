@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import type { Dentist } from "@prisma/client";
 import { services } from "@/lib/clinic-data";
 import { timeSlots } from "@/lib/appointments";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-export default function BookingForm() {
+export default function BookingForm({ dentists }: { dentists: Dentist[] }) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -22,6 +23,7 @@ export default function BookingForm() {
       email: formData.get("email") as string,
       phone: formData.get("phone") as string,
       serviceId: formData.get("serviceId") as string,
+      dentistId: formData.get("dentistId") as string,
       date: formData.get("date") as string,
       time: formData.get("time") as string,
       notes: formData.get("notes") as string,
@@ -91,6 +93,25 @@ export default function BookingForm() {
             {services.map((service) => (
               <option key={service.id} value={service.id}>
                 {service.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="dentistId" className="block text-sm font-medium">
+            Dentist
+          </label>
+          <select
+            id="dentistId"
+            name="dentistId"
+            required
+            className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
+          >
+            <option value="">Select a dentist</option>
+            {dentists.map((dentist) => (
+              <option key={dentist.id} value={dentist.id}>
+                {dentist.name} — {dentist.specialty}
               </option>
             ))}
           </select>

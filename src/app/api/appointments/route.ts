@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
 import { createAppointment } from "@/lib/appointments-db";
+import { getDentists } from "@/lib/dentists";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -22,7 +23,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const validationError = validateAppointment(body);
+  const dentists = await getDentists();
+  const validationError = validateAppointment(
+    body,
+    dentists.map((d) => d.id),
+  );
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
   }

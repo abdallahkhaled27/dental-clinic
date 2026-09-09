@@ -14,6 +14,7 @@ export type NewAppointmentInput = {
   email: string;
   phone: string;
   serviceId: string;
+  dentistId: string;
   date: string;
   time: string;
   notes?: string;
@@ -38,6 +39,7 @@ export const timeSlots = [
 
 export function validateAppointment(
   input: Partial<NewAppointmentInput>,
+  validDentistIds: string[],
 ): string | null {
   if (!input.name?.trim()) return "Name is required.";
   if (!input.email?.trim() || !isValidEmail(input.email)) {
@@ -48,6 +50,9 @@ export function validateAppointment(
   }
   if (!input.serviceId || !services.some((s) => s.id === input.serviceId)) {
     return "Please select a valid service.";
+  }
+  if (!input.dentistId || !validDentistIds.includes(input.dentistId)) {
+    return "Please select a valid dentist.";
   }
   if (!input.time || !timeSlots.includes(input.time)) {
     return "Please select a valid time.";

@@ -1,16 +1,19 @@
+import type { Dentist } from "@prisma/client";
 import { openai } from "@/lib/openai";
 import { clinicInfo, services, hours } from "@/lib/clinic-data";
 import { retrieveRelevantKnowledge } from "@/lib/rag";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
 import { createAppointment } from "@/lib/appointments-db";
+import { getDentists } from "@/lib/dentists";
 import { validateLead, createLead, type NewLeadInput } from "@/lib/leads";
-import { bookAppointmentTool, captureLeadTool } from "@/lib/tools";
+import { buildBookAppointmentTool, captureLeadTool } from "@/lib/tools";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 function buildInstructions(
   relevantKnowledge: { topic: string; content: string }[],
+  dentists: Dentist[],
 ): string {
   const today = new Date().toISOString().split("T")[0];
 
@@ -22,10 +25,11 @@ Clinic info:
 - Address: ${clinicInfo.address}
 - Hours: ${hours.map((h) => `${h.day}: ${h.time}`).join("; ")}
 - Services offered: ${services.map((s) => `${s.name} (id: ${s.id})`).join(", ")}
+- Dentists: ${dentists.map((d) => `${d.name}, ${d.specialty} (id: ${d.id})`).join("; ")}
 
 Answer patient questions using only the information provided to you. Never invent specific numbers — prices, costs, statistics, wait times, or anything similarly precise — that aren't explicitly given above; if asked for one you don't have, say you don't have exact pricing and suggest calling the clinic. Keep responses short (2-4 sentences) and friendly.
 
-You CAN book appointments directly using the book_appointment tool. Before calling it, make sure you have the patient's name, email, phone, which service, a date, and a time — ask for anything missing rather than guessing. After a successful booking, confirm the details back to the patient. If booking fails, explain the problem in plain language and ask them to try again.
+You CAN book appointments directly using the book_appointment tool. Before calling it, make sure you have the patient's name, email, phone, which service, which dentist, a date, and a time — ask for anything missing rather than guessing. If the patient has no preference, suggest a dentist whose specialty fits what they need. After a successful booking, confirm the details back to the patient. If booking fails, explain the problem in plain language and ask them to try again.
 
 If a patient shows real interest but isn't ready to book right now (asking about pricing without committing, seems unsure, or their situation needs a real person), offer to have someone from the team follow up with them. Only if they agree, ask for their name and best contact info, then use the capture_lead tool. Don't push this on every message — only when it's a natural fit.`;
 
@@ -40,7 +44,10 @@ If a patient shows real interest but isn't ready to book right now (asking about
 // manual booking form (BookingForm.tsx -> /api/appointments) uses. The AI
 // doesn't get a shortcut around validation just because it's the one
 // calling this instead of a human filling out a form.
-async function runBookAppointment(argsJson: string): Promise<string> {
+async function runBookAppointment(
+  argsJson: string,
+  validDentistIds: string[],
+): Promise<string> {
   let input: Partial<NewAppointmentInput>;
   try {
     input = JSON.parse(argsJson);
@@ -48,7 +55,7 @@ async function runBookAppointment(argsJson: string): Promise<string> {
     return JSON.stringify({ success: false, error: "Invalid arguments." });
   }
 
-  const validationError = validateAppointment(input);
+  const validationError = validateAppointment(input, validDentistIds);
   if (validationError) {
     return JSON.stringify({ success: false, error: validationError });
   }
@@ -120,8 +127,13 @@ export async function POST(request: Request) {
   }
 
   const latestQuestion = messages[messages.length - 1]?.content ?? "";
-  const relevantKnowledge = await retrieveRelevantKnowledge(latestQuestion);
-  const instructions = buildInstructions(relevantKnowledge);
+  const [relevantKnowledge, dentists] = await Promise.all([
+    retrieveRelevantKnowledge(latestQuestion),
+    getDentists(),
+  ]);
+  const instructions = buildInstructions(relevantKnowledge, dentists);
+  const bookAppointmentTool = buildBookAppointmentTool(dentists);
+  const validDentistIds = dentists.map((d) => d.id);
 
   const encoder = new TextEncoder();
 
@@ -181,7 +193,7 @@ export async function POST(request: Request) {
               call_id: call.call_id,
               output: await (async () => {
                 if (call.name === "book_appointment") {
-                  return runBookAppointment(call.arguments);
+                  return runBookAppointment(call.arguments, validDentistIds);
                 }
                 if (call.name === "capture_lead") {
                   return runCaptureLead(call.arguments);

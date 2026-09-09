@@ -12,10 +12,24 @@ model Appointment {
   email     String
   phone     String
   serviceId String
+  dentistId String
+  dentist   Dentist  @relation(fields: [dentistId], references: [id])
   date      String
   time      String
   notes     String   @default("")
   createdAt DateTime @default(now())
+}
+
+// A dentist patients can book with. Kept in the database (unlike `services`,
+// which is a static list in clinic-data.ts) because which dentists exist is
+// operational data the clinic could change, not something baked into the
+// app's code.
+model Dentist {
+  id           String        @id @default(uuid())
+  name         String
+  specialty    String
+  createdAt    DateTime      @default(now())
+  appointments Appointment[]
 }
 
 // One retrievable piece of clinic knowledge (an FAQ answer, a policy, etc.)

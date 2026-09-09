@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 import BookingForm from "@/components/BookingForm";
+import { getDentists } from "@/lib/dentists";
 
 export const metadata: Metadata = {
   title: "Book an Appointment | Bright Smile Dental",
 };
 
-export default function BookPage() {
+// The dentist list now comes from the database (see schema.prisma) rather
+// than static code, so this page needs a live DB connection per request —
+// same reasoning as the admin page's `force-dynamic`.
+export const dynamic = "force-dynamic";
+
+export default async function BookPage() {
+  const dentists = await getDentists();
+
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
       <h1 className="text-3xl font-bold tracking-tight">
@@ -16,7 +24,7 @@ export default function BookPage() {
         shortly.
       </p>
       <div className="mt-10">
-        <BookingForm />
+        <BookingForm dentists={dentists} />
       </div>
     </main>
   );

@@ -70,6 +70,7 @@ export default async function AdminPage() {
                 <th className="py-2 pr-4 font-medium">Patient</th>
                 <th className="py-2 pr-4 font-medium">Contact</th>
                 <th className="py-2 pr-4 font-medium">Service</th>
+                <th className="py-2 pr-4 font-medium">Dentist</th>
                 <th className="py-2 pr-4 font-medium">Date</th>
                 <th className="py-2 pr-4 font-medium">Time</th>
                 <th className="py-2 pr-4 font-medium">Notes</th>
@@ -90,6 +91,7 @@ export default async function AdminPage() {
                   <td className="py-3 pr-4">
                     {serviceName(appointment.serviceId)}
                   </td>
+                  <td className="py-3 pr-4">{appointment.dentist.name}</td>
                   <td className="py-3 pr-4">{appointment.date}</td>
                   <td className="py-3 pr-4">{appointment.time}</td>
                   <td className="max-w-xs py-3 pr-4">
