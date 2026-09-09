@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import ChatWidget from "@/components/ChatWidget";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,18 +17,19 @@ export const metadata: Metadata = {
   description: "Modern dental care for the whole family.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// Deliberately bare: fonts and the CSS reset are the only things every
+// route needs. The public site's chrome (Header/Footer/ChatWidget) lives
+// in (site)/layout.tsx instead of here, and /admin gets its own minimal
+// shell in admin/layout.tsx — an internal staff tool showing the "Book
+// Appointment" marketing CTA and the patient chat widget doesn't make
+// sense, and putting Header/Footer here made that unavoidable.
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <Header />
-        {children}
-        <Footer />
-        <ChatWidget />
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

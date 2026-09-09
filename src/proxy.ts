@@ -3,9 +3,10 @@ import { getSessionByToken } from "@/lib/auth";
 import { getPatientSessionByToken } from "@/lib/patient-auth";
 
 // Real per-user authentication (Feature 9), replacing Feature 4's temporary
-// shared-password Basic Auth. Redirects to /login instead of returning a
-// browser-native auth popup, since a real login page can show validation
-// errors and gives us somewhere for a logout button to send people back to.
+// shared-password Basic Auth. Redirects to /staff/login instead of
+// returning a browser-native auth popup, since a real login page can show
+// validation errors and gives us somewhere for a logout button to send
+// people back to.
 //
 // Two independent gates live here, on two entirely separate session
 // systems (see patient-auth.ts for why): /admin needs a signed-in staff
@@ -24,7 +25,7 @@ export async function proxy(request: NextRequest) {
     const token = request.cookies.get("session")?.value;
     const session = await getSessionByToken(token);
     if (!session) {
-      const loginUrl = new URL("/login", request.url);
+      const loginUrl = new URL("/staff/login", request.url);
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
     }

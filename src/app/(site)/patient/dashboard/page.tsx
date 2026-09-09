@@ -36,21 +36,14 @@ export default async function PatientDashboardPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">My Appointments</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Signed in as {session.email}
-          </p>
-        </div>
-        <form action="/api/patient/logout" method="POST">
-          <button
-            type="submit"
-            className="rounded-full border border-border px-4 py-1.5 text-sm transition-colors hover:bg-foreground/5"
-          >
-            Log out
-          </button>
-        </form>
+      {/* Logging out lives in the header nav (see PatientNavLink) —
+          reachable from every page, not just this one, so it isn't
+          repeated here. */}
+      <div className="border-b border-border pb-6">
+        <h1 className="text-2xl font-bold tracking-tight">My Appointments</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Signed in as {session.email}
+        </p>
       </div>
 
       {sortedAppointments.length === 0 ? (

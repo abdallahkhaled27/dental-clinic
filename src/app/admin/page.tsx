@@ -7,7 +7,7 @@ import { getLeads } from "@/lib/leads";
 import { verifySession } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Admin | Bright Smile Dental",
+  title: "Staff Dashboard | Bright Smile Dental",
 };
 
 // Always render this page fresh per request — never prerender it at build
@@ -27,7 +27,7 @@ export default async function AdminPage() {
   // the proxy matcher, this line is still what actually stops it.
   const session = await verifySession();
   if (!session) {
-    redirect("/login");
+    redirect("/staff/login?next=/admin");
   }
 
   const [appointments, leads] = await Promise.all([getAppointments(), getLeads()]);
