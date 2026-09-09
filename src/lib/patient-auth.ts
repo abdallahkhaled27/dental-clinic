@@ -24,12 +24,14 @@ async function startSession(patientId: string): Promise<void> {
   await prisma.patientSession.create({ data: { token, patientId, expiresAt } });
 
   const cookieStore = await cookies();
+  // No `expires` here — see the identical note in auth.ts: this makes it a
+  // session cookie, gone when the browser fully closes. expiresAt is still
+  // enforced server-side in getPatientSessionByToken as a backstop.
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    expires: expiresAt,
   });
 }
 

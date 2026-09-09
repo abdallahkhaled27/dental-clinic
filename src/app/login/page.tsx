@@ -9,11 +9,20 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+  // Only ever redirect within our own site — see the identical check on
+  // the patient login page for why this is validated rather than trusted.
+  const redirectTo = next?.startsWith("/") ? next : "/admin";
+
   // Already signed in? No reason to show the form again.
   const session = await verifySession();
   if (session) {
-    redirect("/admin");
+    redirect(redirectTo);
   }
 
   return (
@@ -24,7 +33,7 @@ export default async function LoginPage() {
           For clinic staff only. Contact an administrator if you need access.
         </p>
         <div className="mt-8">
-          <LoginForm />
+          <LoginForm redirectTo={redirectTo} />
         </div>
       </div>
     </main>

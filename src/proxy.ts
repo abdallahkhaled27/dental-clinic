@@ -11,6 +11,12 @@ import { getPatientSessionByToken } from "@/lib/patient-auth";
 // systems (see patient-auth.ts for why): /admin needs a signed-in staff
 // member, /book and /patient/dashboard need a signed-in patient. Neither
 // cookie can satisfy the other's check.
+//
+// (Cache-Control: no-store on these same routes — so a signed-out visitor
+// can't hit Back and see a bfcache-restored copy of a protected page — is
+// set in next.config.ts instead of here: headers set on NextResponse.next()
+// in middleware get overwritten by the framework's own response headers
+// before the page is actually served, so it has no effect from this file.)
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -18,7 +24,9 @@ export async function proxy(request: NextRequest) {
     const token = request.cookies.get("session")?.value;
     const session = await getSessionByToken(token);
     if (!session) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
     }
     return;
   }

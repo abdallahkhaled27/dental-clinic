@@ -45,12 +45,18 @@ export async function attemptLogin(
   await prisma.session.create({ data: { token, userId: user.id, expiresAt } });
 
   const cookieStore = await cookies();
+  // No `expires`/`maxAge` set here on purpose: that makes this a *session*
+  // cookie, which the browser discards when it fully closes (not just the
+  // tab), forcing a fresh login next time. expiresAt above still bounds how
+  // long the session row itself is valid server-side — a lower-priority
+  // backstop, not the primary control (some browsers can restore session
+  // cookies via "reopen previous session" — the DB-side check still cuts
+  // that off after 7 days).
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    expires: expiresAt,
   });
 
   return { success: true };

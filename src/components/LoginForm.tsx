@@ -8,7 +8,7 @@ import Spinner from "@/components/ui/Spinner";
 
 type Status = "idle" | "submitting" | "error";
 
-export default function LoginForm() {
+export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -38,7 +38,8 @@ export default function LoginForm() {
         return;
       }
 
-      router.push("/admin");
+      router.push(redirectTo);
+      router.refresh();
     } catch {
       setStatus("error");
       setErrorMessage("Couldn't reach the server. Please try again.");
