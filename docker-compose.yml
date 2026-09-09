@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dental_clinic
+      POSTGRES_PASSWORD: dental_clinic
+      POSTGRES_DB: dental_clinic
+    ports:
+      # Host port 5433 (not the default 5432) because this machine already
+      # has a separate Homebrew-managed Postgres listening on 5432 for
+      # another project. Inside the Docker network it's still port 5432.
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

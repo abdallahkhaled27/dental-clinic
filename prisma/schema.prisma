@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Appointment {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String
+  serviceId String
+  date      String
+  time      String
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+}
+
+// One retrievable piece of clinic knowledge (an FAQ answer, a policy, etc.)
+// plus its embedding — a list of numbers representing the meaning of
+// `content`, produced by an embeddings model. Similar meanings produce
+// similar (nearby) vectors, which is what makes semantic search possible.
+model KnowledgeChunk {
+  id        String   @id @default(uuid())
+  topic     String
+  content   String
+  embedding Float[]
+  createdAt DateTime @default(now())
+}
+
+// Someone who showed interest but didn't book — captured by the chatbot
+// so staff can follow up personally. `status` starts at "new"; staff
+// updates it manually once they've made contact.
+model Lead {
+  id        String   @id @default(uuid())
+  name      String
+  contact   String
+  interest  String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+}
+
+// A clinic staff account. There's no public sign-up — accounts are created
+// with prisma/create-admin.ts (see that file for why).
+model StaffUser {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
+// A logged-in session. Storing these in the database (rather than only in
+// a signed cookie) is what makes "log out" and "log out everywhere" real
+// operations — deleting the row here immediately invalidates the session,
+// no matter what the browser still has cached.
+model Session {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  user      StaffUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+}
