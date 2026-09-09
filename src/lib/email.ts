@@ -15,12 +15,10 @@ function getResendClient(): Resend | null {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
-// Resend's shared sandbox address — works with zero setup, but (like any
-// sender on a domain you haven't verified) can only actually deliver to
-// the email address the Resend account itself was signed up with. Sending
-// to real patients needs a verified domain (Resend -> Domains), after
-// which this becomes e.g. "Bright Smile Dental <appointments@brightsmiledental.com>".
-const FROM = "Bright Smile Dental <onboarding@resend.dev>";
+// mail.abdallahyoussef.com is verified in Resend (SPF/DKIM/DMARC all
+// passing) — unlike the old onboarding@resend.dev sandbox address, this
+// can deliver to any recipient, not just the Resend account's own email.
+const FROM = "Bright Smile Dental <appointments@mail.abdallahyoussef.com>";
 
 // Both functions below deliberately never throw — a booking or a lead is
 // already saved in the database by the time either of these runs, so a
