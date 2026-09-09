@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
 import { createAppointment } from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
+import { verifyPatientSession } from "@/lib/patient-auth";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -10,6 +11,18 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Too many requests. Please wait a moment and try again." },
       { status: 429 },
+    );
+  }
+
+  // Booking requires a patient account — the /book page already redirects
+  // signed-out visitors to /patient/login, but that's a UI convenience, not
+  // enforcement. This is the actual gate: even a direct API request without
+  // a valid session cookie is rejected here.
+  const session = await verifyPatientSession();
+  if (!session) {
+    return NextResponse.json(
+      { error: "Please sign in to book an appointment." },
+      { status: 401 },
     );
   }
 
@@ -33,7 +46,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const appointment = await createAppointment(body as NewAppointmentInput);
+    const appointment = await createAppointment(
+      body as NewAppointmentInput,
+      session.patientId,
+    );
     return NextResponse.json({ appointment }, { status: 201 });
   } catch (error) {
     console.error("Failed to create appointment:", error);

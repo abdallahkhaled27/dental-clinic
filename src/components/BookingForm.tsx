@@ -7,7 +7,15 @@ import { timeSlots } from "@/lib/appointments";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-export default function BookingForm({ dentists }: { dentists: Dentist[] }) {
+export default function BookingForm({
+  dentists,
+  defaultName,
+  defaultEmail,
+}: {
+  dentists: Dentist[];
+  defaultName?: string;
+  defaultEmail?: string;
+}) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -75,8 +83,20 @@ export default function BookingForm({ dentists }: { dentists: Dentist[] }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Full Name" name="name" type="text" required />
-        <Field label="Email" name="email" type="email" required />
+        <Field
+          label="Full Name"
+          name="name"
+          type="text"
+          required
+          defaultValue={defaultName}
+        />
+        <Field
+          label="Email"
+          name="email"
+          type="email"
+          required
+          defaultValue={defaultEmail}
+        />
         <Field label="Phone" name="phone" type="tel" required />
 
         <div>
@@ -174,12 +194,14 @@ function Field({
   type,
   required,
   min,
+  defaultValue,
 }: {
   label: string;
   name: string;
   type: string;
   required?: boolean;
   min?: string;
+  defaultValue?: string;
 }) {
   return (
     <div>
@@ -192,6 +214,7 @@ function Field({
         type={type}
         required={required}
         min={min}
+        defaultValue={defaultValue}
         className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
       />
     </div>

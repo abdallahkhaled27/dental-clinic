@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import BookingForm from "@/components/BookingForm";
 import { getDentists } from "@/lib/dentists";
+import { verifyPatientSession } from "@/lib/patient-auth";
 
 export const metadata: Metadata = {
   title: "Book an Appointment | Bright Smile Dental",
@@ -12,6 +14,14 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function BookPage() {
+  // proxy.ts already redirects signed-out visitors before the request
+  // reaches here — this is the second, independent check directly in
+  // front of the page itself (same belt-and-suspenders pattern as /admin).
+  const session = await verifyPatientSession();
+  if (!session) {
+    redirect("/patient/login?next=/book");
+  }
+
   const dentists = await getDentists();
 
   return (
@@ -24,7 +34,11 @@ export default async function BookPage() {
         shortly.
       </p>
       <div className="mt-10">
-        <BookingForm dentists={dentists} />
+        <BookingForm
+          dentists={dentists}
+          defaultName={session.name}
+          defaultEmail={session.email}
+        />
       </div>
     </main>
   );

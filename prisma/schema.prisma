@@ -14,6 +14,14 @@ model Appointment {
   serviceId String
   dentistId String
   dentist   Dentist  @relation(fields: [dentistId], references: [id])
+  // Nullable: appointments booked before patient accounts existed have no
+  // owner to attribute them to. Booking now requires being signed in, so
+  // every *new* row gets one — this stays optional only for that old data.
+  // SetNull (not Cascade) on delete: if a patient account is ever removed,
+  // the clinic keeps the appointment record, just no longer linked to an
+  // account.
+  patientId String?
+  patient   Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
   date      String
   time      String
   notes     String   @default("")
@@ -91,6 +99,7 @@ model Patient {
   passwordHash String
   createdAt    DateTime          @default(now())
   sessions     PatientSession[]
+  appointments Appointment[]
 }
 
 model PatientSession {

@@ -6,7 +6,7 @@ import Link from "next/link";
 
 type Status = "idle" | "submitting" | "error";
 
-export default function PatientRegisterForm() {
+export default function PatientRegisterForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -37,8 +37,7 @@ export default function PatientRegisterForm() {
         return;
       }
 
-      // TODO(Feature 14): send to /patient/dashboard once it exists.
-      router.push("/");
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setStatus("error");
@@ -103,7 +102,10 @@ export default function PatientRegisterForm() {
 
       <p className="text-center text-sm opacity-70">
         Already have an account?{" "}
-        <Link href="/patient/login" className="underline hover:opacity-70">
+        <Link
+          href={`/patient/login?next=${encodeURIComponent(redirectTo)}`}
+          className="underline hover:opacity-70"
+        >
           Sign in
         </Link>
       </p>

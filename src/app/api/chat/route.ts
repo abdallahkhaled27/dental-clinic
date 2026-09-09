@@ -6,16 +6,23 @@ import { validateAppointment, type NewAppointmentInput } from "@/lib/appointment
 import { createAppointment } from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
 import { validateLead, createLead, type NewLeadInput } from "@/lib/leads";
+import { verifyPatientSession } from "@/lib/patient-auth";
 import { buildBookAppointmentTool, captureLeadTool } from "@/lib/tools";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
+type PatientSession = Awaited<ReturnType<typeof verifyPatientSession>>;
 
 function buildInstructions(
   relevantKnowledge: { topic: string; content: string }[],
   dentists: Dentist[],
+  patientSession: PatientSession,
 ): string {
   const today = new Date().toISOString().split("T")[0];
+
+  const bookingParagraph = patientSession
+    ? `The patient is signed in as ${patientSession.name} (${patientSession.email}). You CAN book appointments directly using the book_appointment tool. Before calling it, make sure you have the patient's name, email, phone, which service, which dentist, a date, and a time — ask for anything missing rather than guessing (the account holder isn't necessarily who the appointment is for). If the patient has no dentist preference, suggest one whose specialty fits what they need. After a successful booking, confirm the details back to the patient. If booking fails, explain the problem in plain language and ask them to try again.`
+    : `The patient is NOT signed in, so you CANNOT book appointments in this conversation — there is no booking tool available to you right now. If they want to book, tell them to sign in or create a free account at /patient/login, then come back and ask again.`;
 
   const base = `You are a friendly, concise virtual receptionist for ${clinicInfo.name}, a dental clinic. Today's date is ${today}.
 
@@ -29,7 +36,7 @@ Clinic info:
 
 Answer patient questions using only the information provided to you. Never invent specific numbers — prices, costs, statistics, wait times, or anything similarly precise — that aren't explicitly given above; if asked for one you don't have, say you don't have exact pricing and suggest calling the clinic. Keep responses short (2-4 sentences) and friendly.
 
-You CAN book appointments directly using the book_appointment tool. Before calling it, make sure you have the patient's name, email, phone, which service, which dentist, a date, and a time — ask for anything missing rather than guessing. If the patient has no preference, suggest a dentist whose specialty fits what they need. After a successful booking, confirm the details back to the patient. If booking fails, explain the problem in plain language and ask them to try again.
+${bookingParagraph}
 
 If a patient shows real interest but isn't ready to book right now (asking about pricing without committing, seems unsure, or their situation needs a real person), offer to have someone from the team follow up with them. Only if they agree, ask for their name and best contact info, then use the capture_lead tool. Don't push this on every message — only when it's a natural fit.`;
 
@@ -47,6 +54,7 @@ If a patient shows real interest but isn't ready to book right now (asking about
 async function runBookAppointment(
   argsJson: string,
   validDentistIds: string[],
+  patientId: string,
 ): Promise<string> {
   let input: Partial<NewAppointmentInput>;
   try {
@@ -61,7 +69,7 @@ async function runBookAppointment(
   }
 
   try {
-    const appointment = await createAppointment(input as NewAppointmentInput);
+    const appointment = await createAppointment(input as NewAppointmentInput, patientId);
     return JSON.stringify({
       success: true,
       id: appointment.id,
@@ -127,13 +135,21 @@ export async function POST(request: Request) {
   }
 
   const latestQuestion = messages[messages.length - 1]?.content ?? "";
-  const [relevantKnowledge, dentists] = await Promise.all([
+  const [relevantKnowledge, dentists, patientSession] = await Promise.all([
     retrieveRelevantKnowledge(latestQuestion),
     getDentists(),
+    verifyPatientSession(),
   ]);
-  const instructions = buildInstructions(relevantKnowledge, dentists);
-  const bookAppointmentTool = buildBookAppointmentTool(dentists);
+  const instructions = buildInstructions(relevantKnowledge, dentists, patientSession);
   const validDentistIds = dentists.map((d) => d.id);
+
+  // The booking tool only exists in the list the model sees when the
+  // patient is actually signed in — this is the real enforcement (the
+  // model structurally cannot call a tool that was never offered to it),
+  // not just the prompt wording above.
+  const tools = patientSession
+    ? [buildBookAppointmentTool(dentists), captureLeadTool]
+    : [captureLeadTool];
 
   const encoder = new TextEncoder();
 
@@ -151,7 +167,7 @@ export async function POST(request: Request) {
           const stream = await openai.responses.create({
             model: "gpt-4o-mini",
             instructions,
-            tools: [bookAppointmentTool, captureLeadTool],
+            tools,
             input: nextInput,
             previous_response_id: previousResponseId,
             stream: true,
@@ -192,8 +208,12 @@ export async function POST(request: Request) {
               type: "function_call_output" as const,
               call_id: call.call_id,
               output: await (async () => {
-                if (call.name === "book_appointment") {
-                  return runBookAppointment(call.arguments, validDentistIds);
+                if (call.name === "book_appointment" && patientSession) {
+                  return runBookAppointment(
+                    call.arguments,
+                    validDentistIds,
+                    patientSession.patientId,
+                  );
                 }
                 if (call.name === "capture_lead") {
                   return runCaptureLead(call.arguments);

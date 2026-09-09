@@ -9,10 +9,18 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function PatientRegisterPage() {
+export default async function PatientRegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+  // See the identical check on the login page for why this is validated.
+  const redirectTo = next?.startsWith("/") ? next : "/patient/dashboard";
+
   const session = await verifyPatientSession();
   if (session) {
-    redirect("/");
+    redirect(redirectTo);
   }
 
   return (
@@ -22,7 +30,7 @@ export default async function PatientRegisterPage() {
         Sign up to manage your appointments.
       </p>
       <div className="mt-8">
-        <PatientRegisterForm />
+        <PatientRegisterForm redirectTo={redirectTo} />
       </div>
     </main>
   );
