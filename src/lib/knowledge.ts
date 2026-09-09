@@ -19,7 +19,7 @@ export const knowledgeBase: KnowledgeEntry[] = [
   {
     topic: "Cancellation policy",
     content:
-      "We ask that you give at least 24 hours' notice if you need to cancel or reschedule an appointment. Cancellations made with less than 24 hours' notice, or missed appointments, may incur a $50 cancellation fee. Call us at (555) 123-4567 as soon as you know you need to reschedule.",
+      "We ask that you give at least 24 hours' notice if you need to cancel or reschedule an appointment. Cancellations made with less than 24 hours' notice, or missed appointments, may incur a $50 cancellation fee. Call us at +20 155 555 2764 as soon as you know you need to reschedule.",
   },
   {
     topic: "First visit",

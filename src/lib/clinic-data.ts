@@ -11,12 +11,12 @@ export type Service = {
 export const clinicInfo = {
   name: "Bright Smile Dental",
   tagline: "Modern dental care for the whole family",
-  phone: "(555) 123-4567",
-  email: "hello@brightsmiledental.com",
-  address: "123 Main Street, Springfield, ST 12345",
+  phone: "+20 155 555 2764",
+  email: "abdallah.khaled2003@gmail.com",
+  address: "Rehab City, New Cairo",
   // Digits only, country code first, no "+" or spaces — the format
-  // wa.me links require. Replace with the clinic's real WhatsApp number.
-  whatsapp: "15551234567",
+  // wa.me links require.
+  whatsapp: "201555552764",
 };
 
 export const services: Service[] = [
@@ -59,7 +59,7 @@ export const services: Service[] = [
 ];
 
 export const hours: { day: string; time: string }[] = [
-  { day: "Monday – Friday", time: "8:00 AM – 6:00 PM" },
-  { day: "Saturday", time: "9:00 AM – 2:00 PM" },
-  { day: "Sunday", time: "Closed" },
+  { day: "Sunday – Thursday", time: "9:00 AM – 5:00 PM" },
+  { day: "Friday", time: "Closed" },
+  { day: "Saturday", time: "Closed" },
 ];
