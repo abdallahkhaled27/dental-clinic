@@ -4,6 +4,8 @@ import { createAppointment } from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
 import { verifyPatientSession } from "@/lib/patient-auth";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
+import { services } from "@/lib/clinic-data";
+import { sendAppointmentConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   // 5 bookings per minute per IP — a real patient books once, not in bulk.
@@ -50,6 +52,23 @@ export async function POST(request: Request) {
       body as NewAppointmentInput,
       session.patientId,
     );
+
+    const dentist = dentists.find((d) => d.id === appointment.dentistId);
+    const service = services.find((s) => s.id === appointment.serviceId);
+    // Awaited, not fire-and-forget: on Vercel, a serverless function's
+    // execution can be frozen the moment the response is sent, so an
+    // un-awaited promise isn't reliably guaranteed to finish sending. The
+    // function itself never throws (see email.ts), so this only adds
+    // latency, not a new failure mode.
+    await sendAppointmentConfirmationEmail({
+      to: appointment.email,
+      patientName: appointment.name,
+      serviceName: service?.name ?? appointment.serviceId,
+      dentistName: dentist?.name ?? "your dentist",
+      date: appointment.date,
+      time: appointment.time,
+    });
+
     return NextResponse.json({ appointment }, { status: 201 });
   } catch (error) {
     console.error("Failed to create appointment:", error);

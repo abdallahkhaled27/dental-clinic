@@ -9,6 +9,8 @@ import { validateLead, createLead, type NewLeadInput } from "@/lib/leads";
 import { verifyPatientSession } from "@/lib/patient-auth";
 import { buildBookAppointmentTool, captureLeadTool } from "@/lib/tools";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
+import { isValidEmail } from "@/lib/validation";
+import { sendAppointmentConfirmationEmail, sendLeadConfirmationEmail } from "@/lib/email";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type PatientSession = Awaited<ReturnType<typeof verifyPatientSession>>;
@@ -53,7 +55,7 @@ If a patient shows real interest but isn't ready to book right now (asking about
 // calling this instead of a human filling out a form.
 async function runBookAppointment(
   argsJson: string,
-  validDentistIds: string[],
+  dentists: Dentist[],
   patientId: string,
 ): Promise<string> {
   let input: Partial<NewAppointmentInput>;
@@ -63,13 +65,30 @@ async function runBookAppointment(
     return JSON.stringify({ success: false, error: "Invalid arguments." });
   }
 
-  const validationError = validateAppointment(input, validDentistIds);
+  const validationError = validateAppointment(
+    input,
+    dentists.map((d) => d.id),
+  );
   if (validationError) {
     return JSON.stringify({ success: false, error: validationError });
   }
 
   try {
     const appointment = await createAppointment(input as NewAppointmentInput, patientId);
+
+    const dentist = dentists.find((d) => d.id === appointment.dentistId);
+    const service = services.find((s) => s.id === appointment.serviceId);
+    // Awaited for the same reason as the booking form's route — see the
+    // note there.
+    await sendAppointmentConfirmationEmail({
+      to: appointment.email,
+      patientName: appointment.name,
+      serviceName: service?.name ?? appointment.serviceId,
+      dentistName: dentist?.name ?? "your dentist",
+      date: appointment.date,
+      time: appointment.time,
+    });
+
     return JSON.stringify({
       success: true,
       id: appointment.id,
@@ -100,6 +119,17 @@ async function runCaptureLead(argsJson: string): Promise<string> {
 
   try {
     const lead = await createLead(input as NewLeadInput);
+
+    // `contact` is either an email or a phone number (see leads.ts) —
+    // only send a confirmation email when it's actually an email address.
+    if (isValidEmail(lead.contact)) {
+      await sendLeadConfirmationEmail({
+        to: lead.contact,
+        name: lead.name,
+        interest: lead.interest,
+      });
+    }
+
     return JSON.stringify({ success: true, id: lead.id });
   } catch (error) {
     console.error("Failed to create lead (chat tool call):", error);
@@ -141,7 +171,6 @@ export async function POST(request: Request) {
     verifyPatientSession(),
   ]);
   const instructions = buildInstructions(relevantKnowledge, dentists, patientSession);
-  const validDentistIds = dentists.map((d) => d.id);
 
   // The booking tool only exists in the list the model sees when the
   // patient is actually signed in — this is the real enforcement (the
@@ -211,7 +240,7 @@ export async function POST(request: Request) {
                 if (call.name === "book_appointment" && patientSession) {
                   return runBookAppointment(
                     call.arguments,
-                    validDentistIds,
+                    dentists,
                     patientSession.patientId,
                   );
                 }
