@@ -2,7 +2,18 @@ import "server-only";
 import { Resend } from "resend";
 import { clinicInfo } from "./clinic-data";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Built lazily, inside each function below, instead of once at module
+// scope: the Resend constructor throws synchronously when no key is
+// passed, and Next.js evaluates route modules (importing this file along
+// the way) while collecting page data at *build* time — so a top-level
+// `new Resend(...)` here would fail the entire production build the
+// moment RESEND_API_KEY is unset, not just skip sending an email at
+// request time the way the `if (!process.env.RESEND_API_KEY)` checks
+// below are meant to.
+function getResendClient(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 // Resend's shared sandbox address — works with zero setup, but (like any
 // sender on a domain you haven't verified) can only actually deliver to
@@ -26,7 +37,8 @@ export async function sendAppointmentConfirmationEmail(params: {
   date: string;
   time: string;
 }): Promise<void> {
-  if (!process.env.RESEND_API_KEY) {
+  const resend = getResendClient();
+  if (!resend) {
     console.warn("RESEND_API_KEY not set — skipping appointment confirmation email.");
     return;
   }
@@ -59,7 +71,8 @@ export async function sendLeadConfirmationEmail(params: {
   name: string;
   interest: string;
 }): Promise<void> {
-  if (!process.env.RESEND_API_KEY) {
+  const resend = getResendClient();
+  if (!resend) {
     console.warn("RESEND_API_KEY not set — skipping lead confirmation email.");
     return;
   }
