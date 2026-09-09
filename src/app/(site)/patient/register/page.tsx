@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { verifyPatientSession } from "@/lib/patient-auth";
 import PatientRegisterForm from "@/components/PatientRegisterForm";
-import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 export const metadata: Metadata = {
   title: "Create Account | Bright Smile Dental",
@@ -32,14 +31,8 @@ export default async function PatientRegisterPage({
           Sign up to manage your appointments.
         </p>
         <div className="mt-8">
-          <GoogleSignInButton redirectTo={redirectTo} />
+          <PatientRegisterForm redirectTo={redirectTo} />
         </div>
-        <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-          <div className="h-px flex-1 bg-border" />
-          or
-          <div className="h-px flex-1 bg-border" />
-        </div>
-        <PatientRegisterForm redirectTo={redirectTo} />
       </div>
     </main>
   );
