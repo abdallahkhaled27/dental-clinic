@@ -14,6 +14,9 @@ export const clinicInfo = {
   phone: "(555) 123-4567",
   email: "hello@brightsmiledental.com",
   address: "123 Main Street, Springfield, ST 12345",
+  // Digits only, country code first, no "+" or spaces — the format
+  // wa.me links require. Replace with the clinic's real WhatsApp number.
+  whatsapp: "15551234567",
 };
 
 export const services: Service[] = [
