@@ -5,5 +5,5 @@ import { logout } from "@/lib/auth";
 // client-side JavaScript needed for something this simple.
 export async function POST(request: Request) {
   await logout();
-  return NextResponse.redirect(new URL("/staff/login", request.url));
+  return NextResponse.redirect(new URL("/admin/login", request.url));
 }

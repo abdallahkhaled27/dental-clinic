@@ -27,7 +27,7 @@ export default async function AdminPage() {
   // the proxy matcher, this line is still what actually stops it.
   const session = await verifySession();
   if (!session) {
-    redirect("/staff/login?next=/admin");
+    redirect("/admin/login?next=/admin");
   }
 
   const [appointments, leads] = await Promise.all([getAppointments(), getLeads()]);
