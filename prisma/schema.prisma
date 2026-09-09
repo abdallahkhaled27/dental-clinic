@@ -93,10 +93,15 @@ model Session {
 // their session tables) fully independent means there's no shared code path
 // where that boundary could accidentally blur.
 model Patient {
-  id           String            @id @default(uuid())
-  name         String
-  email        String            @unique
-  passwordHash String
+  id    String @id @default(uuid())
+  name  String
+  email String @unique
+  // Nullable: an account created via Google sign-in has no password at
+  // all — Google already verified who they are, there's nothing for us
+  // to hash. attemptPatientLogin's DUMMY_HASH fallback means a
+  // Google-only account (passwordHash null) safely rejects every
+  // email/password login attempt instead of throwing.
+  passwordHash String?
   createdAt    DateTime          @default(now())
   sessions     PatientSession[]
   appointments Appointment[]

@@ -56,6 +56,27 @@ export async function registerPatient(
   return { success: true };
 }
 
+// Used by the Google sign-in callback (see auth.ts). Google has already
+// verified the email belongs to whoever is signing in — that's the whole
+// point of using it as an identity provider — so unlike attemptPatientLogin
+// there's no password to check here. Matches an existing account by email
+// (so someone who registered with a password can also just use Google
+// afterward and land on the same account) or creates a new, password-less
+// one.
+export async function findOrCreatePatientFromGoogle(
+  email: string,
+  name: string,
+): Promise<{ patientId: string }> {
+  const patient = await prisma.patient.upsert({
+    where: { email },
+    update: {},
+    create: { email, name, passwordHash: null },
+  });
+
+  await startSession(patient.id);
+  return { patientId: patient.id };
+}
+
 export async function attemptPatientLogin(
   email: string,
   password: string,
