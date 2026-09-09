@@ -21,12 +21,17 @@ export default function Header() {
           </Link>
         </nav>
 
-        <Link
-          href="/book"
-          className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
-        >
-          Book Appointment
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/patient/login" className="hidden text-sm hover:opacity-70 sm:inline">
+            Patient Login
+          </Link>
+          <Link
+            href="/book"
+            className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+          >
+            Book Appointment
+          </Link>
+        </div>
       </div>
     </header>
   );

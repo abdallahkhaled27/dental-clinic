@@ -78,3 +78,26 @@ model Session {
   expiresAt DateTime
   createdAt DateTime  @default(now())
 }
+
+// A patient's own account — separate from StaffUser on purpose. Patients
+// self-register (there's a public sign-up), staff don't; and a patient
+// session must never be usable to access /admin, so keeping the models (and
+// their session tables) fully independent means there's no shared code path
+// where that boundary could accidentally blur.
+model Patient {
+  id           String            @id @default(uuid())
+  name         String
+  email        String            @unique
+  passwordHash String
+  createdAt    DateTime          @default(now())
+  sessions     PatientSession[]
+}
+
+model PatientSession {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}

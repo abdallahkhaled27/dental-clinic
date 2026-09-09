@@ -19,3 +19,10 @@ export function isValidContact(value: string): boolean {
   const trimmed = value.trim();
   return isValidEmail(trimmed) || isValidPhone(trimmed);
 }
+
+// Length only, deliberately — composition rules ("must contain a symbol")
+// push people toward predictable substitutions without adding real
+// strength. Length is what actually makes a password hard to brute-force.
+export function isValidPassword(value: string): boolean {
+  return value.length >= 8;
+}
