@@ -3,6 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
+import ErrorBanner from "@/components/ui/ErrorBanner";
+import Spinner from "@/components/ui/Spinner";
 
 type Status = "idle" | "submitting" | "error";
 
@@ -45,10 +48,12 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
     }
   }
 
+  const isSubmitting = status === "submitting";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="name" className="block text-sm font-medium">
+        <label htmlFor="name" className={labelClass}>
           Full Name
         </label>
         <input
@@ -56,12 +61,13 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
           name="name"
           type="text"
           required
-          className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
+          disabled={isSubmitting}
+          className={fieldClass}
         />
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium">
+        <label htmlFor="email" className={labelClass}>
           Email
         </label>
         <input
@@ -69,12 +75,13 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
           name="email"
           type="email"
           required
-          className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
+          disabled={isSubmitting}
+          className={fieldClass}
         />
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium">
+        <label htmlFor="password" className={labelClass}>
           Password
         </label>
         <input
@@ -83,28 +90,24 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
           type="password"
           required
           minLength={8}
-          className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
+          disabled={isSubmitting}
+          className={fieldClass}
         />
-        <p className="mt-1 text-xs opacity-60">At least 8 characters.</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">At least 8 characters.</p>
       </div>
 
-      {status === "error" && (
-        <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
-      )}
+      {status === "error" && <ErrorBanner message={errorMessage} />}
 
-      <button
-        type="submit"
-        disabled={status === "submitting"}
-        className="w-full rounded-full bg-foreground px-6 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
-      >
-        {status === "submitting" ? "Creating account..." : "Create account"}
+      <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
+        {isSubmitting && <Spinner />}
+        {isSubmitting ? "Creating account..." : "Create account"}
       </button>
 
-      <p className="text-center text-sm opacity-70">
+      <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link
           href={`/patient/login?next=${encodeURIComponent(redirectTo)}`}
-          className="underline hover:opacity-70"
+          className="font-medium text-primary hover:underline"
         >
           Sign in
         </Link>

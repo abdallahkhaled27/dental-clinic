@@ -2,6 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
+import ErrorBanner from "@/components/ui/ErrorBanner";
+import Spinner from "@/components/ui/Spinner";
 
 type Status = "idle" | "submitting" | "error";
 
@@ -42,10 +45,12 @@ export default function LoginForm() {
     }
   }
 
+  const isSubmitting = status === "submitting";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="email" className="block text-sm font-medium">
+        <label htmlFor="email" className={labelClass}>
           Email
         </label>
         <input
@@ -53,12 +58,13 @@ export default function LoginForm() {
           name="email"
           type="email"
           required
-          className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
+          disabled={isSubmitting}
+          className={fieldClass}
         />
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium">
+        <label htmlFor="password" className={labelClass}>
           Password
         </label>
         <input
@@ -66,20 +72,16 @@ export default function LoginForm() {
           name="password"
           type="password"
           required
-          className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
+          disabled={isSubmitting}
+          className={fieldClass}
         />
       </div>
 
-      {status === "error" && (
-        <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
-      )}
+      {status === "error" && <ErrorBanner message={errorMessage} />}
 
-      <button
-        type="submit"
-        disabled={status === "submitting"}
-        className="w-full rounded-full bg-foreground px-6 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
-      >
-        {status === "submitting" ? "Signing in..." : "Sign in"}
+      <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
+        {isSubmitting && <Spinner />}
+        {isSubmitting ? "Signing in..." : "Sign in"}
       </button>
     </form>
   );

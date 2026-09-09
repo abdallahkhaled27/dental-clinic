@@ -17,13 +17,15 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="mx-auto max-w-sm px-6 py-24">
-      <h1 className="text-2xl font-bold tracking-tight">Staff Login</h1>
-      <p className="mt-2 text-sm opacity-70">
-        For clinic staff only. Contact an administrator if you need access.
-      </p>
-      <div className="mt-8">
-        <LoginForm />
+    <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-sm items-center px-6 py-16">
+      <div className="w-full rounded-2xl border border-border bg-surface p-8 shadow-sm">
+        <h1 className="text-2xl font-bold tracking-tight">Staff Login</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          For clinic staff only. Contact an administrator if you need access.
+        </p>
+        <div className="mt-8">
+          <LoginForm />
+        </div>
       </div>
     </main>
   );

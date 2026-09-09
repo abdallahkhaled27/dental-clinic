@@ -21,14 +21,30 @@ export default function PatientNavLink() {
 
   if (name) {
     return (
-      <Link href="/patient/dashboard" className="hidden text-sm hover:opacity-70 sm:inline">
-        My Appointments
-      </Link>
+      <div className="flex items-center gap-4">
+        <Link
+          href="/patient/dashboard"
+          className="text-sm text-foreground/80 transition-colors hover:text-foreground"
+        >
+          My Appointments
+        </Link>
+        <form action="/api/patient/logout" method="POST">
+          <button
+            type="submit"
+            className="text-sm text-foreground/80 transition-colors hover:text-foreground"
+          >
+            Log out
+          </button>
+        </form>
+      </div>
     );
   }
 
   return (
-    <Link href="/patient/login" className="hidden text-sm hover:opacity-70 sm:inline">
+    <Link
+      href="/patient/login"
+      className="text-sm text-foreground/80 transition-colors hover:text-foreground"
+    >
       Patient Login
     </Link>
   );

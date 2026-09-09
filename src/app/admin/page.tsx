@@ -41,63 +41,73 @@ export default async function AdminPage() {
   });
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-16">
-      <div className="flex items-center justify-between">
-        <span className="text-sm opacity-70">Signed in as {session.email}</span>
+    <main className="mx-auto max-w-6xl px-6 py-12">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Staff Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Signed in as {session.email}
+          </p>
+        </div>
         <form action="/api/auth/logout" method="POST">
           <button
             type="submit"
-            className="rounded-full border border-black/10 px-4 py-1.5 text-sm hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/10"
+            className="rounded-full border border-border px-4 py-1.5 text-sm transition-colors hover:bg-foreground/5"
           >
             Log out
           </button>
         </form>
       </div>
 
-      <h1 className="mt-8 text-3xl font-bold tracking-tight">Appointments</h1>
-      <p className="mt-2 opacity-70">
-        {sortedAppointments.length} appointment
-        {sortedAppointments.length === 1 ? "" : "s"} booked
-      </p>
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">Appointments booked</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{sortedAppointments.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">Leads awaiting follow-up</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{leads.length}</p>
+        </div>
+      </div>
+
+      <h2 className="mt-12 text-lg font-semibold tracking-tight">Appointments</h2>
 
       {sortedAppointments.length === 0 ? (
-        <p className="mt-10 opacity-70">No appointments yet.</p>
+        <EmptyState message="No appointments yet." />
       ) : (
-        <div className="mt-8 overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-sm">
+        <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
+          <table className="w-full min-w-[760px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left dark:border-white/10">
-                <th className="py-2 pr-4 font-medium">Patient</th>
-                <th className="py-2 pr-4 font-medium">Contact</th>
-                <th className="py-2 pr-4 font-medium">Service</th>
-                <th className="py-2 pr-4 font-medium">Dentist</th>
-                <th className="py-2 pr-4 font-medium">Date</th>
-                <th className="py-2 pr-4 font-medium">Time</th>
-                <th className="py-2 pr-4 font-medium">Notes</th>
-                <th className="py-2 pr-4 font-medium">Booked</th>
+              <tr className="border-b border-border bg-foreground/[0.02] text-left text-muted-foreground">
+                <th className="px-4 py-3 font-medium">Patient</th>
+                <th className="px-4 py-3 font-medium">Contact</th>
+                <th className="px-4 py-3 font-medium">Service</th>
+                <th className="px-4 py-3 font-medium">Dentist</th>
+                <th className="px-4 py-3 font-medium">Date</th>
+                <th className="px-4 py-3 font-medium">Time</th>
+                <th className="px-4 py-3 font-medium">Notes</th>
+                <th className="px-4 py-3 font-medium">Booked</th>
               </tr>
             </thead>
             <tbody>
               {sortedAppointments.map((appointment) => (
                 <tr
                   key={appointment.id}
-                  className="border-b border-black/5 align-top dark:border-white/5"
+                  className="border-b border-border align-top last:border-0 hover:bg-foreground/[0.02]"
                 >
-                  <td className="py-3 pr-4">{appointment.name}</td>
-                  <td className="py-3 pr-4">
+                  <td className="px-4 py-3 font-medium">{appointment.name}</td>
+                  <td className="px-4 py-3">
                     <div>{appointment.email}</div>
-                    <div className="opacity-70">{appointment.phone}</div>
+                    <div className="text-muted-foreground">{appointment.phone}</div>
                   </td>
-                  <td className="py-3 pr-4">
-                    {serviceName(appointment.serviceId)}
-                  </td>
-                  <td className="py-3 pr-4">{appointment.dentist.name}</td>
-                  <td className="py-3 pr-4">{appointment.date}</td>
-                  <td className="py-3 pr-4">{appointment.time}</td>
-                  <td className="max-w-xs py-3 pr-4">
+                  <td className="px-4 py-3">{serviceName(appointment.serviceId)}</td>
+                  <td className="px-4 py-3">{appointment.dentist.name}</td>
+                  <td className="px-4 py-3 tabular-nums">{appointment.date}</td>
+                  <td className="px-4 py-3 tabular-nums">{appointment.time}</td>
+                  <td className="max-w-xs px-4 py-3 text-muted-foreground">
                     {appointment.notes || "—"}
                   </td>
-                  <td className="py-3 pr-4 opacity-70">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {new Date(appointment.createdAt).toLocaleString()}
                   </td>
                 </tr>
@@ -107,41 +117,37 @@ export default async function AdminPage() {
         </div>
       )}
 
-      <h2 className="mt-16 text-2xl font-bold tracking-tight">Leads</h2>
-      <p className="mt-2 opacity-70">
-        {leads.length} {leads.length === 1 ? "person" : "people"} interested,
-        not yet booked
-      </p>
+      <h2 className="mt-12 text-lg font-semibold tracking-tight">Leads</h2>
 
       {leads.length === 0 ? (
-        <p className="mt-10 opacity-70">No leads yet.</p>
+        <EmptyState message="No leads yet." />
       ) : (
-        <div className="mt-8 overflow-x-auto">
+        <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
           <table className="w-full min-w-[600px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left dark:border-white/10">
-                <th className="py-2 pr-4 font-medium">Name</th>
-                <th className="py-2 pr-4 font-medium">Contact</th>
-                <th className="py-2 pr-4 font-medium">Interested in</th>
-                <th className="py-2 pr-4 font-medium">Status</th>
-                <th className="py-2 pr-4 font-medium">Captured</th>
+              <tr className="border-b border-border bg-foreground/[0.02] text-left text-muted-foreground">
+                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Contact</th>
+                <th className="px-4 py-3 font-medium">Interested in</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Captured</th>
               </tr>
             </thead>
             <tbody>
               {leads.map((lead) => (
                 <tr
                   key={lead.id}
-                  className="border-b border-black/5 align-top dark:border-white/5"
+                  className="border-b border-border align-top last:border-0 hover:bg-foreground/[0.02]"
                 >
-                  <td className="py-3 pr-4">{lead.name}</td>
-                  <td className="py-3 pr-4">{lead.contact}</td>
-                  <td className="max-w-xs py-3 pr-4">{lead.interest}</td>
-                  <td className="py-3 pr-4">
-                    <span className="rounded-full bg-black/5 px-2 py-1 text-xs dark:bg-white/10">
+                  <td className="px-4 py-3 font-medium">{lead.name}</td>
+                  <td className="px-4 py-3">{lead.contact}</td>
+                  <td className="max-w-xs px-4 py-3 text-muted-foreground">{lead.interest}</td>
+                  <td className="px-4 py-3">
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                       {lead.status}
                     </span>
                   </td>
-                  <td className="py-3 pr-4 opacity-70">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {new Date(lead.createdAt).toLocaleString()}
                   </td>
                 </tr>
@@ -151,5 +157,13 @@ export default async function AdminPage() {
         </div>
       )}
     </main>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="mt-4 rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+      {message}
+    </div>
   );
 }

@@ -4,6 +4,9 @@ import { useState, type FormEvent } from "react";
 import type { Dentist } from "@prisma/client";
 import { services } from "@/lib/clinic-data";
 import { timeSlots } from "@/lib/appointments";
+import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
+import ErrorBanner from "@/components/ui/ErrorBanner";
+import Spinner from "@/components/ui/Spinner";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -63,14 +66,25 @@ export default function BookingForm({
 
   if (status === "success") {
     return (
-      <div className="rounded-lg border border-black/10 p-8 text-center dark:border-white/10">
-        <h2 className="text-xl font-semibold">Appointment requested!</h2>
-        <p className="mt-2 opacity-70">
+      <div className="rounded-xl border border-success-border bg-success-bg p-8 text-center">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          className="mx-auto h-10 w-10 text-success"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12.5l2.5 2.5L16 9" />
+        </svg>
+        <h2 className="mt-4 text-xl font-semibold">Appointment requested!</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
           We&apos;ll reach out to confirm your appointment shortly.
         </p>
         <button
           onClick={() => setStatus("idle")}
-          className="mt-6 rounded-full bg-foreground px-6 py-2 text-sm font-medium text-background hover:opacity-90"
+          className="mt-6 rounded-full bg-primary px-6 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
         >
           Book another appointment
         </button>
@@ -79,9 +93,10 @@ export default function BookingForm({
   }
 
   const today = new Date().toISOString().split("T")[0];
+  const isSubmitting = status === "submitting";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
           label="Full Name"
@@ -89,6 +104,7 @@ export default function BookingForm({
           type="text"
           required
           defaultValue={defaultName}
+          disabled={isSubmitting}
         />
         <Field
           label="Email"
@@ -96,19 +112,15 @@ export default function BookingForm({
           type="email"
           required
           defaultValue={defaultEmail}
+          disabled={isSubmitting}
         />
-        <Field label="Phone" name="phone" type="tel" required />
+        <Field label="Phone" name="phone" type="tel" required disabled={isSubmitting} />
 
         <div>
-          <label htmlFor="serviceId" className="block text-sm font-medium">
+          <label htmlFor="serviceId" className={labelClass}>
             Service
           </label>
-          <select
-            id="serviceId"
-            name="serviceId"
-            required
-            className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
-          >
+          <select id="serviceId" name="serviceId" required disabled={isSubmitting} className={fieldClass}>
             <option value="">Select a service</option>
             {services.map((service) => (
               <option key={service.id} value={service.id}>
@@ -119,15 +131,10 @@ export default function BookingForm({
         </div>
 
         <div>
-          <label htmlFor="dentistId" className="block text-sm font-medium">
+          <label htmlFor="dentistId" className={labelClass}>
             Dentist
           </label>
-          <select
-            id="dentistId"
-            name="dentistId"
-            required
-            className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
-          >
+          <select id="dentistId" name="dentistId" required disabled={isSubmitting} className={fieldClass}>
             <option value="">Select a dentist</option>
             {dentists.map((dentist) => (
               <option key={dentist.id} value={dentist.id}>
@@ -137,18 +144,13 @@ export default function BookingForm({
           </select>
         </div>
 
-        <Field label="Date" name="date" type="date" required min={today} />
+        <Field label="Date" name="date" type="date" required min={today} disabled={isSubmitting} />
 
         <div>
-          <label htmlFor="time" className="block text-sm font-medium">
+          <label htmlFor="time" className={labelClass}>
             Time
           </label>
-          <select
-            id="time"
-            name="time"
-            required
-            className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
-          >
+          <select id="time" name="time" required disabled={isSubmitting} className={fieldClass}>
             <option value="">Select a time</option>
             {timeSlots.map((slot) => (
               <option key={slot} value={slot}>
@@ -160,29 +162,23 @@ export default function BookingForm({
       </div>
 
       <div>
-        <label htmlFor="notes" className="block text-sm font-medium">
+        <label htmlFor="notes" className={labelClass}>
           Notes (optional)
         </label>
         <textarea
           id="notes"
           name="notes"
           rows={3}
-          className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
+          disabled={isSubmitting}
+          className={fieldClass}
         />
       </div>
 
-      {status === "error" && (
-        <p className="text-sm text-red-600 dark:text-red-400">
-          {errorMessage}
-        </p>
-      )}
+      {status === "error" && <ErrorBanner message={errorMessage} />}
 
-      <button
-        type="submit"
-        disabled={status === "submitting"}
-        className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
-      >
-        {status === "submitting" ? "Submitting..." : "Request Appointment"}
+      <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
+        {isSubmitting && <Spinner />}
+        {isSubmitting ? "Submitting..." : "Request Appointment"}
       </button>
     </form>
   );
@@ -195,6 +191,7 @@ function Field({
   required,
   min,
   defaultValue,
+  disabled,
 }: {
   label: string;
   name: string;
@@ -202,10 +199,11 @@ function Field({
   required?: boolean;
   min?: string;
   defaultValue?: string;
+  disabled?: boolean;
 }) {
   return (
     <div>
-      <label htmlFor={name} className="block text-sm font-medium">
+      <label htmlFor={name} className={labelClass}>
         {label}
       </label>
       <input
@@ -215,7 +213,8 @@ function Field({
         required={required}
         min={min}
         defaultValue={defaultValue}
-        className="mt-1 w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm dark:border-white/10"
+        disabled={disabled}
+        className={fieldClass}
       />
     </div>
   );

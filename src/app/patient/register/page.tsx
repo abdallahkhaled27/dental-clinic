@@ -24,13 +24,15 @@ export default async function PatientRegisterPage({
   }
 
   return (
-    <main className="mx-auto max-w-sm px-6 py-24">
-      <h1 className="text-2xl font-bold tracking-tight">Create Account</h1>
-      <p className="mt-2 text-sm opacity-70">
-        Sign up to manage your appointments.
-      </p>
-      <div className="mt-8">
-        <PatientRegisterForm redirectTo={redirectTo} />
+    <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-sm items-center px-6 py-16">
+      <div className="w-full rounded-2xl border border-border bg-surface p-8 shadow-sm">
+        <h1 className="text-2xl font-bold tracking-tight">Create Account</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Sign up to manage your appointments.
+        </p>
+        <div className="mt-8">
+          <PatientRegisterForm redirectTo={redirectTo} />
+        </div>
       </div>
     </main>
   );

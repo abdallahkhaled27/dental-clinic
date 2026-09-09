@@ -35,53 +35,58 @@ export default async function PatientDashboardPage() {
   });
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16">
-      <div className="flex items-center justify-between">
-        <span className="text-sm opacity-70">Signed in as {session.email}</span>
+    <main className="mx-auto max-w-3xl px-6 py-12">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">My Appointments</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Signed in as {session.email}
+          </p>
+        </div>
         <form action="/api/patient/logout" method="POST">
           <button
             type="submit"
-            className="rounded-full border border-black/10 px-4 py-1.5 text-sm hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/10"
+            className="rounded-full border border-border px-4 py-1.5 text-sm transition-colors hover:bg-foreground/5"
           >
             Log out
           </button>
         </form>
       </div>
 
-      <div className="mt-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">My Appointments</h1>
-        <Link
-          href="/book"
-          className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
-        >
-          Book Appointment
-        </Link>
-      </div>
-
       {sortedAppointments.length === 0 ? (
-        <p className="mt-10 opacity-70">
-          You don&apos;t have any appointments yet.
-        </p>
+        <div className="mt-8 rounded-xl border border-dashed border-border p-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            You don&apos;t have any appointments yet.
+          </p>
+          <Link
+            href="/book"
+            className="mt-4 inline-block rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
+          >
+            Book Appointment
+          </Link>
+        </div>
       ) : (
-        <ul className="mt-8 space-y-4">
+        <ul className="mt-8 space-y-3">
           {sortedAppointments.map((appointment) => (
             <li
               key={appointment.id}
-              className="rounded-lg border border-black/10 p-5 dark:border-white/10"
+              className="rounded-xl border border-border bg-surface p-5 shadow-sm"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="font-medium">
+                <span className="font-semibold">
                   {serviceName(appointment.serviceId)}
                 </span>
-                <span className="text-sm opacity-70">
+                <span className="text-sm font-medium tabular-nums text-primary">
                   {appointment.date} at {appointment.time}
                 </span>
               </div>
-              <p className="mt-1 text-sm opacity-70">
+              <p className="mt-1.5 text-sm text-muted-foreground">
                 With {appointment.dentist.name} — {appointment.dentist.specialty}
               </p>
               {appointment.notes && (
-                <p className="mt-2 text-sm opacity-70">{appointment.notes}</p>
+                <p className="mt-2 border-t border-border pt-2 text-sm text-muted-foreground">
+                  {appointment.notes}
+                </p>
               )}
             </li>
           ))}

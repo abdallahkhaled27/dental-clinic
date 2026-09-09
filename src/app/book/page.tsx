@@ -26,14 +26,14 @@ export default async function BookPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight">
+      <h1 className="text-3xl font-bold tracking-tight text-balance">
         Book an Appointment
       </h1>
-      <p className="mt-2 opacity-70">
+      <p className="mt-2 text-muted-foreground">
         Fill out the form below and we&apos;ll confirm your appointment
         shortly.
       </p>
-      <div className="mt-10">
+      <div className="mt-10 rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
         <BookingForm
           dentists={dentists}
           defaultName={session.name}
