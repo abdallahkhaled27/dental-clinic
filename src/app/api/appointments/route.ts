@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
-import { createAppointment } from "@/lib/appointments-db";
+import { createAppointment, isSlotConflictError } from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
 import { verifyPatientSession } from "@/lib/patient-auth";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
@@ -71,6 +71,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ appointment }, { status: 201 });
   } catch (error) {
+    if (isSlotConflictError(error)) {
+      return NextResponse.json(
+        { error: "That dentist is already booked at that date and time. Please pick a different time or dentist." },
+        { status: 409 },
+      );
+    }
     console.error("Failed to create appointment:", error);
     return NextResponse.json(
       { error: "Something went wrong saving your appointment. Please try again." },

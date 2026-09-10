@@ -1,6 +1,16 @@
-import type { Appointment, Dentist } from "@prisma/client";
+import { Prisma, type Appointment, type Dentist } from "@prisma/client";
 import { prisma } from "./prisma";
 import type { NewAppointmentInput } from "./appointments";
+
+// True when `error` is Postgres rejecting a create because the
+// (dentistId, date, time) unique constraint was violated — i.e. someone
+// else booked that exact slot with that dentist first. Callers use this
+// to turn Prisma's raw P2002 into a message a patient can actually act on.
+export function isSlotConflictError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
+  );
+}
 
 export type AppointmentWithDentist = Appointment & { dentist: Dentist };
 

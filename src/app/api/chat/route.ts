@@ -3,7 +3,7 @@ import { openai } from "@/lib/openai";
 import { clinicInfo, services, hours } from "@/lib/clinic-data";
 import { retrieveRelevantKnowledge } from "@/lib/rag";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
-import { createAppointment } from "@/lib/appointments-db";
+import { createAppointment, isSlotConflictError } from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
 import { validateLead, createLead, type NewLeadInput } from "@/lib/leads";
 import { verifyPatientSession } from "@/lib/patient-auth";
@@ -96,6 +96,12 @@ async function runBookAppointment(
       time: appointment.time,
     });
   } catch (error) {
+    if (isSlotConflictError(error)) {
+      return JSON.stringify({
+        success: false,
+        error: "That dentist is already booked at that date and time. Ask the patient to pick a different time or dentist.",
+      });
+    }
     console.error("Failed to create appointment (chat tool call):", error);
     return JSON.stringify({
       success: false,

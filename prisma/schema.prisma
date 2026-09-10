@@ -26,6 +26,14 @@ model Appointment {
   time      String
   notes     String   @default("")
   createdAt DateTime @default(now())
+
+  // The actual guard against double-booking a dentist: enforced by
+  // Postgres itself, not just application code — two concurrent booking
+  // requests for the same slot both pass an application-level check
+  // before either commits, but only one of them can win a DB constraint.
+  // validateAppointment's own conflict check exists purely to turn that
+  // into a friendly error instead of a raw constraint-violation crash.
+  @@unique([dentistId, date, time])
 }
 
 // A dentist patients can book with. Kept in the database (unlike `services`,
