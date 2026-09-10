@@ -1,5 +1,5 @@
 import type { Appointment } from "@prisma/client";
-import { services, closedWeekdays, getClinicToday } from "./clinic-data";
+import { services, closedWeekdays, getClinicToday, getClinicNowMinutes } from "./clinic-data";
 import { isValidEmail, isValidPhone } from "./validation";
 
 // This module holds pure, dependency-free logic (types, constants,
@@ -37,13 +37,26 @@ export const timeSlots = [
   "4:30 PM",
 ];
 
-// Shared by validateAppointment and validateAppointmentEdit — the date
-// itself has to pass the same two checks regardless of who's booking or
-// whether it's a new booking or a reschedule: not in the past, and not on
+// Parses a timeSlots entry ("4:30 PM") into minutes since midnight, so it
+// can be compared against getClinicNowMinutes() — see validateAppointmentDate
+// below, where that comparison is what rejects booking a same-day slot
+// that's already passed (e.g. picking "4:30 PM" for today at 10 PM).
+export function timeSlotToMinutes(time: string): number {
+  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(time);
+  if (!match) return NaN;
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === "PM") hour += 12;
+  return hour * 60 + Number(match[2]);
+}
+
+// Shared by validateAppointment and validateAppointmentEdit — the
+// date+time pair has to pass the same checks regardless of who's booking
+// or whether it's a new booking or a reschedule: not in the past, not on
 // a day the clinic is closed (see closedWeekdays — this is what actually
 // enforces the hours shown on the site and told to the chatbot, instead
-// of just displaying them and hoping nobody books a Friday).
-function validateAppointmentDate(date: string): string | null {
+// of just displaying them and hoping nobody books a Friday), and — for
+// today specifically — not a time slot that's already gone by.
+function validateAppointmentDate(date: string, time: string): string | null {
   // Anchored at noon UTC rather than midnight: a plain "YYYY-MM-DDT00:00:00"
   // (no zone) parses in whatever timezone the *code* happens to run in —
   // the visitor's browser for a Client Component, Vercel's server clock
@@ -58,11 +71,18 @@ function validateAppointmentDate(date: string): string | null {
   // Compared as plain "YYYY-MM-DD" strings, not Date objects — Cairo is
   // the clinic's actual timezone, not the visitor's or the server's (see
   // getClinicToday), and every visitor should see the same "today".
-  if (date < getClinicToday()) {
+  const today = getClinicToday();
+  if (date < today) {
     return "Please select a date that isn't in the past.";
   }
   if (closedWeekdays.includes(parsed.getUTCDay())) {
     return "The clinic is closed that day. Please pick a date from Sunday to Thursday.";
+  }
+  // A future date can't have a "passed" slot, so this only ever applies
+  // to today — see the identical getClinicNowMinutes reasoning as
+  // getClinicToday for why this is safe to compute at request time.
+  if (date === today && timeSlotToMinutes(time) <= getClinicNowMinutes()) {
+    return "That time has already passed today. Please choose a later time.";
   }
   return null;
 }
@@ -89,7 +109,7 @@ export function validateAppointment(
   }
   if (!input.date) return "Please select a date.";
 
-  return validateAppointmentDate(input.date);
+  return validateAppointmentDate(input.date, input.time);
 }
 
 export type AppointmentEditInput = {
@@ -116,5 +136,5 @@ export function validateAppointmentEdit(
   }
   if (!input.date) return "Please select a date.";
 
-  return validateAppointmentDate(input.date);
+  return validateAppointmentDate(input.date, input.time);
 }

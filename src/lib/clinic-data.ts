@@ -95,3 +95,22 @@ export function getClinicTomorrow(): string {
   anchored.setUTCDate(anchored.getUTCDate() + 1);
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" }).format(anchored);
 }
+
+// The current time of day in the clinic's timezone, as minutes since
+// midnight — used to reject booking a same-day slot that's already
+// passed (see timeSlotToMinutes/validateAppointmentDate in
+// appointments.ts). Same Intl + explicit "Africa/Cairo" pattern as
+// getClinicToday: correct regardless of the browser's or server's own
+// clock timezone, since only the *instant* (new Date()) needs to be
+// accurate, not the environment's zone.
+export function getClinicNowMinutes(): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Cairo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
+  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+  return hour * 60 + minute;
+}

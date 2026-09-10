@@ -2,8 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import type { Dentist } from "@prisma/client";
-import { services, getClinicToday } from "@/lib/clinic-data";
-import { timeSlots } from "@/lib/appointments";
+import { services, getClinicToday, getClinicNowMinutes } from "@/lib/clinic-data";
+import { timeSlots, timeSlotToMinutes } from "@/lib/appointments";
 import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
@@ -21,6 +21,7 @@ export default function BookingForm({
 }) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [date, setDate] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -94,6 +95,15 @@ export default function BookingForm({
 
   const today = getClinicToday();
   const isSubmitting = status === "submitting";
+  // Today's already-passed slots are hidden rather than just rejected on
+  // submit — nothing stops a patient picking "4:30 PM" for today at
+  // 10 PM otherwise, since the <select> itself doesn't know what time it
+  // is. The server still enforces this too (see validateAppointmentDate),
+  // this is purely so the dropdown doesn't offer an invalid choice.
+  const availableTimeSlots =
+    date === today
+      ? timeSlots.filter((slot) => timeSlotToMinutes(slot) > getClinicNowMinutes())
+      : timeSlots;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -144,7 +154,22 @@ export default function BookingForm({
           </select>
         </div>
 
-        <Field label="Date" name="date" type="date" required min={today} disabled={isSubmitting} />
+        <div>
+          <label htmlFor="date" className={labelClass}>
+            Date
+          </label>
+          <input
+            id="date"
+            name="date"
+            type="date"
+            required
+            min={today}
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+            disabled={isSubmitting}
+            className={fieldClass}
+          />
+        </div>
 
         <div>
           <label htmlFor="time" className={labelClass}>
@@ -152,12 +177,17 @@ export default function BookingForm({
           </label>
           <select id="time" name="time" required disabled={isSubmitting} className={fieldClass}>
             <option value="">Select a time</option>
-            {timeSlots.map((slot) => (
+            {availableTimeSlots.map((slot) => (
               <option key={slot} value={slot}>
                 {slot}
               </option>
             ))}
           </select>
+          {date === today && availableTimeSlots.length === 0 && (
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              No slots left for today. Please choose a later date.
+            </p>
+          )}
         </div>
       </div>
 

@@ -3,8 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Dentist } from "@prisma/client";
-import { timeSlots } from "@/lib/appointments";
-import { getClinicToday } from "@/lib/clinic-data";
+import { timeSlots, timeSlotToMinutes } from "@/lib/appointments";
+import { getClinicToday, getClinicNowMinutes } from "@/lib/clinic-data";
 import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
@@ -29,6 +29,7 @@ export default function EditAppointmentForm({
   const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [date, setDate] = useState(defaultDate);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,6 +68,18 @@ export default function EditAppointmentForm({
 
   const today = getClinicToday();
   const isSubmitting = status === "submitting";
+  // Same reasoning as BookingForm: hide today's already-passed slots so
+  // staff can't reschedule an appointment into a time that's already
+  // gone by. The current time, if it's already passed, stays selectable
+  // (union with defaultTime) so editing an existing today+past-time
+  // appointment for some other field doesn't silently drop its time out
+  // from under the form.
+  const availableTimeSlots =
+    date === today
+      ? timeSlots.filter(
+          (slot) => timeSlotToMinutes(slot) > getClinicNowMinutes() || slot === defaultTime,
+        )
+      : timeSlots;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -102,7 +115,8 @@ export default function EditAppointmentForm({
             required
             min={today}
             disabled={isSubmitting}
-            defaultValue={defaultDate}
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
             className={fieldClass}
           />
         </div>
@@ -119,7 +133,7 @@ export default function EditAppointmentForm({
             defaultValue={defaultTime}
             className={fieldClass}
           >
-            {timeSlots.map((slot) => (
+            {availableTimeSlots.map((slot) => (
               <option key={slot} value={slot}>
                 {slot}
               </option>
