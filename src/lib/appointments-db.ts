@@ -2,14 +2,28 @@ import { Prisma, type Appointment, type Dentist } from "@prisma/client";
 import { prisma } from "./prisma";
 import type { NewAppointmentInput } from "./appointments";
 
-// True when `error` is Postgres rejecting a create because the
-// (dentistId, date, time) unique constraint was violated — i.e. someone
-// else booked that exact slot with that dentist first. Callers use this
-// to turn Prisma's raw P2002 into a message a patient can actually act on.
-export function isSlotConflictError(error: unknown): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
-  );
+// Which of the two unique constraints on Appointment (see schema.prisma)
+// a failed create violated, so callers can give a message the patient (or
+// the chatbot, on their behalf) can actually act on instead of a generic
+// "something went wrong". Returns null for any other kind of error.
+//
+// The constraint name lives a few levels deep in the driver adapter's own
+// error shape (@prisma/adapter-pg wraps the raw Postgres error rather than
+// Prisma normalizing it the way it does for the built-in engine) — found
+// by triggering both conflicts directly and inspecting `error.meta`.
+export function getSlotConflictKind(
+  error: unknown,
+): "dentist" | "patient" | null {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
+    return null;
+  }
+  const constraint = (
+    error.meta as { driverAdapterError?: { cause?: { constraint?: { index?: string } } } }
+  )?.driverAdapterError?.cause?.constraint?.index;
+
+  if (constraint === "Appointment_dentistId_date_time_key") return "dentist";
+  if (constraint === "Appointment_patientId_date_time_key") return "patient";
+  return null;
 }
 
 export type AppointmentWithDentist = Appointment & { dentist: Dentist };

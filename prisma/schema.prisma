@@ -27,13 +27,18 @@ model Appointment {
   notes     String   @default("")
   createdAt DateTime @default(now())
 
-  // The actual guard against double-booking a dentist: enforced by
-  // Postgres itself, not just application code — two concurrent booking
-  // requests for the same slot both pass an application-level check
-  // before either commits, but only one of them can win a DB constraint.
-  // validateAppointment's own conflict check exists purely to turn that
-  // into a friendly error instead of a raw constraint-violation crash.
+  // Two separate guards, both enforced by Postgres itself (see the note
+  // above on why a DB constraint, not just an application check):
+  // - one dentist can't be double-booked into the same slot by two
+  //   different patients.
+  // - one patient can't be in two places at once — booked with two
+  //   different dentists at the same date and time.
+  // A NULL patientId (legacy/guest rows — see the comment above) never
+  // conflicts with anything: Postgres treats every NULL as distinct from
+  // every other NULL in a unique index, which is exactly what's wanted
+  // here.
   @@unique([dentistId, date, time])
+  @@unique([patientId, date, time])
 }
 
 // A dentist patients can book with. Kept in the database (unlike `services`,
