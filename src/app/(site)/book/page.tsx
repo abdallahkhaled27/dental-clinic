@@ -19,7 +19,7 @@ export default async function BookPage() {
   // front of the page itself (same belt-and-suspenders pattern as /admin).
   const session = await verifyPatientSession();
   if (!session) {
-    redirect("/patient/login?next=/book");
+    redirect("/login?next=/book");
   }
 
   const dentists = await getDentists();

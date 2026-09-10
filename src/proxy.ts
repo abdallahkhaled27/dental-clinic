@@ -10,8 +10,8 @@ import { getPatientSessionByToken } from "@/lib/patient-auth";
 //
 // Two independent gates live here, on two entirely separate session
 // systems (see patient-auth.ts for why): /admin needs a signed-in staff
-// member, /book and /patient/dashboard need a signed-in patient. Neither
-// cookie can satisfy the other's check.
+// member, /book and /dashboard need a signed-in patient. Neither cookie
+// can satisfy the other's check.
 //
 // (Cache-Control: no-store on these same routes — so a signed-out visitor
 // can't hit Back and see a bfcache-restored copy of a protected page — is
@@ -42,12 +42,12 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get("patient_session")?.value;
   const session = await getPatientSessionByToken(token);
   if (!session) {
-    const loginUrl = new URL("/patient/login", request.url);
+    const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/book/:path*", "/patient/dashboard/:path*"],
+  matcher: ["/admin/:path*", "/book/:path*", "/dashboard/:path*"],
 };

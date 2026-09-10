@@ -16,7 +16,7 @@ export default async function PatientRegisterPage({
 }) {
   const { next } = await searchParams;
   // See the identical check on the login page for why this is validated.
-  const redirectTo = next?.startsWith("/") ? next : "/patient/dashboard";
+  const redirectTo = next?.startsWith("/") ? next : "/dashboard";
 
   const session = await verifyPatientSession();
   if (session) {

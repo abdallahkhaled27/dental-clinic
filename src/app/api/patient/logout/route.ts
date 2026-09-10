@@ -3,5 +3,5 @@ import { logoutPatient } from "@/lib/patient-auth";
 
 export async function POST(request: Request) {
   await logoutPatient();
-  return NextResponse.redirect(new URL("/patient/login", request.url));
+  return NextResponse.redirect(new URL("/login", request.url));
 }

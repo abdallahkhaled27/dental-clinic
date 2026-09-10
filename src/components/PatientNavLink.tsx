@@ -32,7 +32,7 @@ export default function PatientNavLink() {
     return (
       <div className="flex items-center gap-4">
         <Link
-          href="/patient/dashboard"
+          href="/dashboard"
           className="text-sm text-foreground/80 transition-colors hover:text-foreground"
         >
           My Appointments
@@ -51,7 +51,7 @@ export default function PatientNavLink() {
 
   return (
     <Link
-      href="/patient/login"
+      href="/login"
       className="text-sm text-foreground/80 transition-colors hover:text-foreground"
     >
       Login

@@ -22,7 +22,7 @@ export default async function PatientDashboardPage() {
   // directly in front of the data itself (same pattern as /admin).
   const session = await verifyPatientSession();
   if (!session) {
-    redirect("/patient/login?next=/patient/dashboard");
+    redirect("/login?next=/dashboard");
   }
 
   const appointments = await getAppointmentsForPatient(session.patientId);

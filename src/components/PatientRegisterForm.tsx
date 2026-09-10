@@ -106,7 +106,7 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link
-          href={`/patient/login?next=${encodeURIComponent(redirectTo)}`}
+          href={`/login?next=${encodeURIComponent(redirectTo)}`}
           className="font-medium text-primary hover:underline"
         >
           Sign in

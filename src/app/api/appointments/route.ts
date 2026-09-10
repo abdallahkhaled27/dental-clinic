@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   }
 
   // Booking requires a patient account — the /book page already redirects
-  // signed-out visitors to /patient/login, but that's a UI convenience, not
+  // signed-out visitors to /login, but that's a UI convenience, not
   // enforcement. This is the actual gate: even a direct API request without
   // a valid session cookie is rejected here.
   const session = await verifyPatientSession();

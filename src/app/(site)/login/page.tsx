@@ -19,7 +19,7 @@ export default async function PatientLoginPage({
   // Only ever redirect within our own site — an unvalidated `next` value
   // could otherwise be used to bounce a signed-in patient off to an
   // attacker-controlled URL.
-  const redirectTo = next?.startsWith("/") ? next : "/patient/dashboard";
+  const redirectTo = next?.startsWith("/") ? next : "/dashboard";
 
   const session = await verifyPatientSession();
   if (session) {

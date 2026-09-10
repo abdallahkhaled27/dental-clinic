@@ -89,7 +89,7 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
         <Link
-          href={`/patient/register?next=${encodeURIComponent(redirectTo)}`}
+          href={`/register?next=${encodeURIComponent(redirectTo)}`}
           className="font-medium text-primary hover:underline"
         >
           Sign up

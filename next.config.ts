@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
         headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
       },
       {
-        source: "/patient/dashboard/:path*",
+        source: "/dashboard/:path*",
         headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
       },
     ];
