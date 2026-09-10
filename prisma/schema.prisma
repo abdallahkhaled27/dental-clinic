@@ -26,6 +26,10 @@ model Appointment {
   time      String
   notes     String   @default("")
   createdAt DateTime @default(now())
+  // Null until the day-before reminder email goes out (see the reminders
+  // cron route) — the guard that stops a patient getting the same
+  // reminder twice if the cron job runs more than once for the same day.
+  reminderSentAt DateTime?
 
   // Two separate guards, both enforced by Postgres itself (see the note
   // above on why a DB constraint, not just an application check):
@@ -118,9 +122,22 @@ model Patient {
   createdAt    DateTime          @default(now())
   sessions     PatientSession[]
   appointments Appointment[]
+  resetTokens  PasswordResetToken[]
 }
 
 model PatientSession {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// A one-time link sent to "forgot password" requests. Short-lived (see
+// PASSWORD_RESET_DURATION_MS in patient-auth.ts) and deleted the moment
+// it's used, so a leaked/old link can't be replayed.
+model PasswordResetToken {
   id        String   @id @default(uuid())
   token     String   @unique
   patientId String

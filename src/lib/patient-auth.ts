@@ -14,6 +14,11 @@ const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30; // 30 days — patients lo
 // that doesn't exist taking the same time as one that does.
 const DUMMY_HASH = hashSync("no-such-account-timing-safety", 10);
 
+// A reset link is only useful for a short window — long enough for someone
+// to find the email and click it, short enough that an old, forgotten link
+// sitting in an inbox isn't a standing way into the account.
+const PASSWORD_RESET_DURATION_MS = 1000 * 60 * 60; // 1 hour
+
 function generateToken(): string {
   return crypto.randomBytes(32).toString("hex");
 }
@@ -89,6 +94,68 @@ export async function attemptPatientLogin(
   }
 
   await startSession(patient.id);
+  return { success: true };
+}
+
+// Looks up the account and creates a reset token when there's actually a
+// password to reset, but the caller (see the API route) always responds
+// the same way either way — this function returning void, not a
+// found/not-found result, is what keeps that decision out of the caller's
+// hands. Revealing "no account with that email" (or "that account uses
+// Google sign-in") lets an attacker enumerate real patient emails one
+// guess at a time; a generic "check your inbox" doesn't.
+export async function requestPasswordReset(email: string, origin: string): Promise<void> {
+  const patient = await prisma.patient.findUnique({ where: { email } });
+  // No account, or a Google-only account with no password to reset —
+  // either way, nothing to send. Silently returning (rather than throwing
+  // or signaling which case it was) is what avoids leaking either fact
+  // back to the caller.
+  if (!patient || !patient.passwordHash) return;
+
+  const token = generateToken();
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_DURATION_MS);
+  await prisma.passwordResetToken.create({
+    data: { token, patientId: patient.id, expiresAt },
+  });
+
+  // `origin` comes from the request the caller (the API route) received,
+  // not an env var — that way the link is correct on localhost, the
+  // Vercel preview domain, and the production custom domain alike with no
+  // separate config to keep in sync across them.
+  const { sendPasswordResetEmail } = await import("./email");
+  const resetUrl = `${origin}/reset-password?token=${token}`;
+  await sendPasswordResetEmail({ to: patient.email, name: patient.name, resetUrl });
+}
+
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
+
+  if (!resetToken || resetToken.expiresAt < new Date()) {
+    if (resetToken) {
+      await prisma.passwordResetToken.delete({ where: { token } }).catch(() => {});
+    }
+    return { success: false, error: "This reset link is invalid or has expired." };
+  }
+
+  const passwordHash = await hash(newPassword, 10);
+  await prisma.$transaction([
+    prisma.patient.update({
+      where: { id: resetToken.patientId },
+      data: { passwordHash },
+    }),
+    // One-time use — deleting it here is what stops the same link being
+    // replayed after it's already worked once.
+    prisma.passwordResetToken.delete({ where: { token } }),
+    // Force re-login everywhere: if the reset was prompted by a
+    // compromised account, whoever else is holding a live session (the
+    // attacker included) gets signed out too, not just the browser doing
+    // the reset.
+    prisma.patientSession.deleteMany({ where: { patientId: resetToken.patientId } }),
+  ]);
+
   return { success: true };
 }
 

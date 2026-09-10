@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
 
-type Status = "idle" | "submitting" | "error";
+type Status = "idle" | "submitting" | "success" | "error";
 
-export default function PatientLoginForm({ redirectTo }: { redirectTo: string }) {
-  const router = useRouter();
+export default function ForgotPasswordForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -20,31 +18,38 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
     setErrorMessage("");
 
     const formData = new FormData(event.currentTarget);
-    const payload = {
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-    };
+    const email = formData.get("email") as string;
 
     try {
-      const response = await fetch("/api/patient/login", {
+      const response = await fetch("/api/patient/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email }),
       });
-      const data = await response.json();
 
       if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
         setStatus("error");
         setErrorMessage(data.error ?? "Something went wrong. Please try again.");
         return;
       }
 
-      router.push(redirectTo);
-      router.refresh();
+      setStatus("success");
     } catch {
       setStatus("error");
       setErrorMessage("Couldn't reach the server. Please try again.");
     }
+  }
+
+  if (status === "success") {
+    return (
+      <div className="rounded-xl border border-success-border bg-success-bg p-6 text-center text-sm">
+        <p>
+          If an account exists for that email, we&apos;ve sent a link to reset your
+          password. It expires in 1 hour.
+        </p>
+      </div>
+    );
   }
 
   const isSubmitting = status === "submitting";
@@ -65,39 +70,17 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
         />
       </div>
 
-      <div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="password" className={labelClass}>
-            Password
-          </label>
-          <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
-            Forgot password?
-          </Link>
-        </div>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          disabled={isSubmitting}
-          className={fieldClass}
-        />
-      </div>
-
       {status === "error" && <ErrorBanner message={errorMessage} />}
 
       <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
         {isSubmitting && <Spinner />}
-        {isSubmitting ? "Signing in..." : "Sign in"}
+        {isSubmitting ? "Sending..." : "Send reset link"}
       </button>
 
       <p className="text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link
-          href={`/register?next=${encodeURIComponent(redirectTo)}`}
-          className="font-medium text-primary hover:underline"
-        >
-          Sign up
+        Remembered your password?{" "}
+        <Link href="/login" className="font-medium text-primary hover:underline">
+          Back to login
         </Link>
       </p>
     </form>

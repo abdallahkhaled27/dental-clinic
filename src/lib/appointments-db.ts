@@ -102,3 +102,24 @@ export function updateAppointment(
 export function deleteAppointment(id: string): Promise<Appointment> {
   return prisma.appointment.delete({ where: { id } });
 }
+
+// Used by the reminders cron route (see /api/cron/reminders) — every
+// appointment happening on `date` that hasn't had a reminder sent yet.
+// reminderSentAt is what makes the job safe to run more than once for the
+// same day (a retry, or a manual re-trigger) without double-emailing
+// anyone.
+export function getAppointmentsNeedingReminder(
+  date: string,
+): Promise<AppointmentWithDentist[]> {
+  return prisma.appointment.findMany({
+    where: { date, reminderSentAt: null },
+    include: { dentist: true },
+  });
+}
+
+export function markReminderSent(id: string): Promise<Appointment> {
+  return prisma.appointment.update({
+    where: { id },
+    data: { reminderSentAt: new Date() },
+  });
+}

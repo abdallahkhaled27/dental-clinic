@@ -64,6 +64,72 @@ export async function sendAppointmentConfirmationEmail(params: {
   }
 }
 
+export async function sendAppointmentReminderEmail(params: {
+  to: string;
+  patientName: string;
+  serviceName: string;
+  dentistName: string;
+  date: string;
+  time: string;
+}): Promise<void> {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set — skipping appointment reminder email.");
+    return;
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: params.to,
+      subject: `Reminder: your appointment is tomorrow at ${params.time}`,
+      html: `
+        <p>Hi ${params.patientName},</p>
+        <p>Just a reminder that you have an appointment at ${clinicInfo.name} tomorrow:</p>
+        <ul>
+          <li><strong>Service:</strong> ${params.serviceName}</li>
+          <li><strong>Dentist:</strong> ${params.dentistName}</li>
+          <li><strong>Date:</strong> ${params.date}</li>
+          <li><strong>Time:</strong> ${params.time}</li>
+        </ul>
+        <p>Need to reschedule or cancel? Call us at ${clinicInfo.phone}.</p>
+        <p>— ${clinicInfo.name}</p>
+      `,
+    });
+  } catch (error) {
+    console.error("Failed to send appointment reminder email:", error);
+  }
+}
+
+export async function sendPasswordResetEmail(params: {
+  to: string;
+  name: string;
+  resetUrl: string;
+}): Promise<void> {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set — skipping password reset email.");
+    return;
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: params.to,
+      subject: `Reset your password — ${clinicInfo.name}`,
+      html: `
+        <p>Hi ${params.name},</p>
+        <p>We received a request to reset your password. Click the link below to choose a new one — it expires in 1 hour:</p>
+        <p><a href="${params.resetUrl}">${params.resetUrl}</a></p>
+        <p>If you didn't request this, you can safely ignore this email.</p>
+        <p>— ${clinicInfo.name}</p>
+      `,
+    });
+  } catch (error) {
+    console.error("Failed to send password reset email:", error);
+  }
+}
+
 export async function sendLeadConfirmationEmail(params: {
   to: string;
   name: string;

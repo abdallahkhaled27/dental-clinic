@@ -7,29 +7,34 @@ import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
 
-type Status = "idle" | "submitting" | "error";
+type Status = "idle" | "submitting" | "success" | "error";
 
-export default function PatientLoginForm({ redirectTo }: { redirectTo: string }) {
+export default function ResetPasswordForm({ token }: { token: string }) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("submitting");
     setErrorMessage("");
 
     const formData = new FormData(event.currentTarget);
-    const payload = {
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-    };
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    if (password !== confirmPassword) {
+      setStatus("error");
+      setErrorMessage("Passwords don't match.");
+      return;
+    }
+
+    setStatus("submitting");
 
     try {
-      const response = await fetch("/api/patient/login", {
+      const response = await fetch("/api/patient/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ token, password }),
       });
       const data = await response.json();
 
@@ -39,12 +44,20 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
         return;
       }
 
-      router.push(redirectTo);
-      router.refresh();
+      setStatus("success");
+      setTimeout(() => router.push("/login"), 2000);
     } catch {
       setStatus("error");
       setErrorMessage("Couldn't reach the server. Please try again.");
     }
+  }
+
+  if (status === "success") {
+    return (
+      <div className="rounded-xl border border-success-border bg-success-bg p-6 text-center text-sm">
+        <p>Your password has been reset. Redirecting you to login...</p>
+      </div>
+    );
   }
 
   const isSubmitting = status === "submitting";
@@ -52,33 +65,30 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="email" className={labelClass}>
-          Email
+        <label htmlFor="password" className={labelClass}>
+          New password
         </label>
         <input
-          id="email"
-          name="email"
-          type="email"
+          id="password"
+          name="password"
+          type="password"
           required
+          minLength={8}
           disabled={isSubmitting}
           className={fieldClass}
         />
       </div>
 
       <div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="password" className={labelClass}>
-            Password
-          </label>
-          <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
-            Forgot password?
-          </Link>
-        </div>
+        <label htmlFor="confirmPassword" className={labelClass}>
+          Confirm new password
+        </label>
         <input
-          id="password"
-          name="password"
+          id="confirmPassword"
+          name="confirmPassword"
           type="password"
           required
+          minLength={8}
           disabled={isSubmitting}
           className={fieldClass}
         />
@@ -88,16 +98,12 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
 
       <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
         {isSubmitting && <Spinner />}
-        {isSubmitting ? "Signing in..." : "Sign in"}
+        {isSubmitting ? "Saving..." : "Reset password"}
       </button>
 
       <p className="text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link
-          href={`/register?next=${encodeURIComponent(redirectTo)}`}
-          className="font-medium text-primary hover:underline"
-        >
-          Sign up
+        <Link href="/login" className="font-medium text-primary hover:underline">
+          Back to login
         </Link>
       </p>
     </form>

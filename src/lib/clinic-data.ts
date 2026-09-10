@@ -83,3 +83,15 @@ export const closedWeekdays = [5, 6]; // Friday, Saturday
 export function getClinicToday(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" }).format(new Date());
 }
+
+// Tomorrow, by the same clinic-timezone rule as getClinicToday — used by
+// the reminders cron job to find "appointments happening tomorrow" without
+// drifting a day off near midnight UTC. Anchored at noon UTC before adding
+// a day so the add can never cross a calendar boundary in the wrong
+// direction (see validateAppointmentDate in appointments.ts for the same
+// noon-anchor trick).
+export function getClinicTomorrow(): string {
+  const anchored = new Date(`${getClinicToday()}T12:00:00Z`);
+  anchored.setUTCDate(anchored.getUTCDate() + 1);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" }).format(anchored);
+}
