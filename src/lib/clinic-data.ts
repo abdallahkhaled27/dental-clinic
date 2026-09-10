@@ -67,5 +67,19 @@ export const hours: { day: string; time: string }[] = [
 // The structured half of `hours` above — used by validateAppointment to
 // actually reject bookings on a closed day, not just display text a
 // patient (or the AI) could still book straight through. Kept in sync
-// with `hours` by hand: 0 = Sunday, ..., 6 = Saturday (JS Date#getDay()).
+// with `hours` by hand: 0 = Sunday, ..., 6 = Saturday (JS Date#getUTCDay()).
 export const closedWeekdays = [5, 6]; // Friday, Saturday
+
+// "Today", anchored to the clinic's own timezone — not the visitor's
+// device, and not the server's. A patient's browser (or Vercel's own
+// server clock) can be in any timezone; `new Date().toISOString()` gives
+// UTC, which drifts a day off from Cairo's actual calendar date for
+// several hours around midnight UTC (Cairo is UTC+2/+3). Since this is a
+// real clinic in one real place, every visitor should see the same
+// "today" — the clinic's — regardless of where they're browsing from.
+// "en-CA" is a locale quirk: it's the one built-in Intl locale that
+// formats as YYYY-MM-DD, matching the date strings used everywhere else
+// in this app.
+export function getClinicToday(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" }).format(new Date());
+}

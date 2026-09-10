@@ -1,6 +1,6 @@
 import type { Dentist } from "@prisma/client";
 import { openai } from "@/lib/openai";
-import { clinicInfo, services, hours } from "@/lib/clinic-data";
+import { clinicInfo, services, hours, getClinicToday } from "@/lib/clinic-data";
 import { retrieveRelevantKnowledge } from "@/lib/rag";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
 import { createAppointment, getSlotConflictKind } from "@/lib/appointments-db";
@@ -20,7 +20,7 @@ function buildInstructions(
   dentists: Dentist[],
   patientSession: PatientSession,
 ): string {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getClinicToday();
 
   const bookingParagraph = patientSession
     ? `The patient is signed in as ${patientSession.name} (${patientSession.email}). You CAN book appointments directly using the book_appointment tool. Before calling it, make sure you have the patient's name, email, phone, which service, which dentist, a date, and a time — ask for anything missing rather than guessing (the account holder isn't necessarily who the appointment is for). If the patient has no dentist preference, suggest one whose specialty fits what they need. After a successful booking, confirm the details back to the patient. If booking fails, explain the problem in plain language and ask them to try again.`

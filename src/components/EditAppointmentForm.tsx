@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Dentist } from "@prisma/client";
 import { timeSlots } from "@/lib/appointments";
+import { getClinicToday } from "@/lib/clinic-data";
 import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
@@ -64,7 +65,7 @@ export default function EditAppointmentForm({
     }
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getClinicToday();
   const isSubmitting = status === "submitting";
 
   return (

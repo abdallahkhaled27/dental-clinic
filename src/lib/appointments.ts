@@ -1,5 +1,5 @@
 import type { Appointment } from "@prisma/client";
-import { services, closedWeekdays } from "./clinic-data";
+import { services, closedWeekdays, getClinicToday } from "./clinic-data";
 import { isValidEmail, isValidPhone } from "./validation";
 
 // This module holds pure, dependency-free logic (types, constants,
@@ -44,13 +44,24 @@ export const timeSlots = [
 // enforces the hours shown on the site and told to the chatbot, instead
 // of just displaying them and hoping nobody books a Friday).
 function validateAppointmentDate(date: string): string | null {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const selectedDate = new Date(`${date}T00:00:00`);
-  if (Number.isNaN(selectedDate.getTime()) || selectedDate < today) {
+  // Anchored at noon UTC rather than midnight: a plain "YYYY-MM-DDT00:00:00"
+  // (no zone) parses in whatever timezone the *code* happens to run in —
+  // the visitor's browser for a Client Component, Vercel's server clock
+  // for a Route Handler — so the same date string could round-trip to a
+  // different calendar day, or a different weekday, depending on where it
+  // ran. Explicit "T12:00:00Z" plus reading it back with getUTCDay() fixes
+  // the instant unambiguously, independent of that.
+  const parsed = new Date(`${date}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) {
+    return "Please select a valid date.";
+  }
+  // Compared as plain "YYYY-MM-DD" strings, not Date objects — Cairo is
+  // the clinic's actual timezone, not the visitor's or the server's (see
+  // getClinicToday), and every visitor should see the same "today".
+  if (date < getClinicToday()) {
     return "Please select a date that isn't in the past.";
   }
-  if (closedWeekdays.includes(selectedDate.getDay())) {
+  if (closedWeekdays.includes(parsed.getUTCDay())) {
     return "The clinic is closed that day. Please pick a date from Sunday to Thursday.";
   }
   return null;

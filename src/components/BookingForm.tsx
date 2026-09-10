@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import type { Dentist } from "@prisma/client";
-import { services } from "@/lib/clinic-data";
+import { services, getClinicToday } from "@/lib/clinic-data";
 import { timeSlots } from "@/lib/appointments";
 import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
@@ -92,7 +92,7 @@ export default function BookingForm({
     );
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getClinicToday();
   const isSubmitting = status === "submitting";
 
   return (
