@@ -54,7 +54,7 @@ export default function PatientNavLink() {
       href="/patient/login"
       className="text-sm text-foreground/80 transition-colors hover:text-foreground"
     >
-      Patient Login
+      Login
     </Link>
   );
 }
