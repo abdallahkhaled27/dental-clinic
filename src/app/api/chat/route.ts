@@ -3,7 +3,12 @@ import { openai } from "@/lib/openai";
 import { clinicInfo, services, hours, getClinicToday, closedWeekdays } from "@/lib/clinic-data";
 import { retrieveRelevantKnowledge } from "@/lib/rag";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
-import { createAppointment, getSlotConflictKind } from "@/lib/appointments-db";
+import {
+  createAppointment,
+  getAppointmentsForPatient,
+  getSlotConflictKind,
+  type AppointmentWithDentist,
+} from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
 import { validateLead, createLead, type NewLeadInput } from "@/lib/leads";
 import { verifyPatientSession } from "@/lib/patient-auth";
@@ -19,6 +24,7 @@ function buildInstructions(
   relevantKnowledge: { topic: string; content: string }[],
   dentists: Dentist[],
   patientSession: PatientSession,
+  upcomingAppointments: AppointmentWithDentist[],
 ): string {
   const today = getClinicToday();
 
@@ -49,6 +55,24 @@ function buildInstructions(
     ? `The patient is signed in as ${patientSession.name} (${patientSession.email}). You CAN book appointments directly using the book_appointment tool. Before calling it, make sure you have the patient's name, email, phone, which service, which dentist, a date, and a time — ask for anything missing rather than guessing (the account holder isn't necessarily who the appointment is for). If the patient has no dentist preference, suggest one whose specialty fits what they need. After a successful booking, confirm the details back to the patient. If booking fails, explain the problem in plain language and ask them to try again.`
     : `The patient is NOT signed in, so you CANNOT book appointments in this conversation — there is no booking tool available to you right now. If they want to book, tell them to sign in or create a free account at /login, then come back and ask again.`;
 
+  // Without this, a signed-in patient asking "do I have anything
+  // tomorrow?" gets an answer made up on the spot — there was no tool or
+  // context giving the model any of their real bookings, so it would
+  // guess (confirmed in practice: it guessed "no appointments" for a
+  // patient who had one the very next day). Listed directly in context
+  // rather than as a callable tool — it's small, read-only reference
+  // data, the same treatment services and dentists already get above.
+  const appointmentsParagraph = patientSession
+    ? upcomingAppointments.length > 0
+      ? `The patient's upcoming appointments (this is the real, current list — use it to answer questions like "do I have anything on [date]", don't guess):\n${upcomingAppointments
+          .map((a) => {
+            const service = services.find((s) => s.id === a.serviceId)?.name ?? a.serviceId;
+            return `- ${service} with ${a.dentist.name} on ${a.date} at ${a.time}`;
+          })
+          .join("\n")}`
+      : `The patient has no upcoming appointments booked right now.`
+    : "";
+
   const base = `You are a friendly, concise virtual receptionist for ${clinicInfo.name}, a dental clinic. Today is ${todayWeekday}, ${today}. Tomorrow is ${tomorrowWeekday}, ${tomorrow} — ${tomorrowStatus}.
 
 Clinic info:
@@ -64,6 +88,8 @@ Answer patient questions using only the information provided to you. Never inven
 Before confirming that ANY date is available (even in a quick "is tomorrow free?" reply, before asking for any other details), check it against the Hours above — if it falls on a closed day, say so immediately and suggest the nearest open day. Don't wait until the booking attempt itself to discover this; a patient who already gave you their service, dentist, time, and phone number for a day we're closed has wasted their time.
 
 ${bookingParagraph}
+
+${appointmentsParagraph}
 
 If a patient shows real interest but isn't ready to book right now (asking about pricing without committing, seems unsure, or their situation needs a real person), offer to have someone from the team follow up with them. Only if they agree, ask for their name and best contact info, then use the capture_lead tool. Don't push this on every message — only when it's a natural fit.`;
 
@@ -208,7 +234,17 @@ export async function POST(request: Request) {
     getDentists(),
     verifyPatientSession(),
   ]);
-  const instructions = buildInstructions(relevantKnowledge, dentists, patientSession);
+  // Only fetched once we know whether there's actually a patient to fetch
+  // for — can't be folded into the Promise.all above since it depends on
+  // patientSession's result. Filtered to today-or-later: past appointments
+  // aren't relevant to "do I have anything coming up" questions and would
+  // just be noise in the prompt.
+  const upcomingAppointments = patientSession
+    ? (await getAppointmentsForPatient(patientSession.patientId)).filter(
+        (a) => a.date >= getClinicToday(),
+      )
+    : [];
+  const instructions = buildInstructions(relevantKnowledge, dentists, patientSession, upcomingAppointments);
 
   // The booking tool only exists in the list the model sees when the
   // patient is actually signed in — this is the real enforcement (the
