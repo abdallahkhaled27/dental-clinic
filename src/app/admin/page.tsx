@@ -4,7 +4,9 @@ import { getAppointments } from "@/lib/appointments-db";
 import { timeSlots } from "@/lib/appointments";
 import { services } from "@/lib/clinic-data";
 import { getLeads } from "@/lib/leads";
+import { getPatientsWithAppointmentCount } from "@/lib/patients";
 import { verifySession } from "@/lib/auth";
+import DeletePatientButton from "@/components/DeletePatientButton";
 
 export const metadata: Metadata = {
   title: "Staff Dashboard | Bright Smile Dental",
@@ -30,7 +32,11 @@ export default async function AdminPage() {
     redirect("/admin/login?next=/admin");
   }
 
-  const [appointments, leads] = await Promise.all([getAppointments(), getLeads()]);
+  const [appointments, leads, patients] = await Promise.all([
+    getAppointments(),
+    getLeads(),
+    getPatientsWithAppointmentCount(),
+  ]);
 
   // Prisma already sorted by date, but "9:00 AM" vs "10:00 AM" doesn't sort
   // correctly as plain text (the "1" in "10" sorts before "9"). timeSlots is
@@ -59,7 +65,7 @@ export default async function AdminPage() {
         </form>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <p className="text-sm text-muted-foreground">Appointments booked</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{sortedAppointments.length}</p>
@@ -67,6 +73,10 @@ export default async function AdminPage() {
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <p className="text-sm text-muted-foreground">Leads awaiting follow-up</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{leads.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">Patient accounts</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{patients.length}</p>
         </div>
       </div>
 
@@ -149,6 +159,44 @@ export default async function AdminPage() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {new Date(lead.createdAt).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <h2 className="mt-12 text-lg font-semibold tracking-tight">Patients</h2>
+
+      {patients.length === 0 ? (
+        <EmptyState message="No patient accounts yet." />
+      ) : (
+        <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
+          <table className="w-full min-w-[600px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border bg-foreground/[0.02] text-left text-muted-foreground">
+                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Email</th>
+                <th className="px-4 py-3 font-medium">Appointments</th>
+                <th className="px-4 py-3 font-medium">Joined</th>
+                <th className="px-4 py-3 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {patients.map((patient) => (
+                <tr
+                  key={patient.id}
+                  className="border-b border-border align-top last:border-0 hover:bg-foreground/[0.02]"
+                >
+                  <td className="px-4 py-3 font-medium">{patient.name}</td>
+                  <td className="px-4 py-3">{patient.email}</td>
+                  <td className="px-4 py-3 tabular-nums">{patient._count.appointments}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {new Date(patient.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    <DeletePatientButton patientId={patient.id} patientName={patient.name} />
                   </td>
                 </tr>
               ))}
