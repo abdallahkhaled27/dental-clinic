@@ -1,5 +1,5 @@
 import type { Appointment } from "@prisma/client";
-import { services } from "./clinic-data";
+import { services, closedWeekdays } from "./clinic-data";
 import { isValidEmail, isValidPhone } from "./validation";
 
 // This module holds pure, dependency-free logic (types, constants,
@@ -37,6 +37,25 @@ export const timeSlots = [
   "4:30 PM",
 ];
 
+// Shared by validateAppointment and validateAppointmentEdit — the date
+// itself has to pass the same two checks regardless of who's booking or
+// whether it's a new booking or a reschedule: not in the past, and not on
+// a day the clinic is closed (see closedWeekdays — this is what actually
+// enforces the hours shown on the site and told to the chatbot, instead
+// of just displaying them and hoping nobody books a Friday).
+function validateAppointmentDate(date: string): string | null {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const selectedDate = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(selectedDate.getTime()) || selectedDate < today) {
+    return "Please select a date that isn't in the past.";
+  }
+  if (closedWeekdays.includes(selectedDate.getDay())) {
+    return "The clinic is closed that day. Please pick a date from Sunday to Thursday.";
+  }
+  return null;
+}
+
 export function validateAppointment(
   input: Partial<NewAppointmentInput>,
   validDentistIds: string[],
@@ -59,14 +78,7 @@ export function validateAppointment(
   }
   if (!input.date) return "Please select a date.";
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const selectedDate = new Date(`${input.date}T00:00:00`);
-  if (Number.isNaN(selectedDate.getTime()) || selectedDate < today) {
-    return "Please select a date that isn't in the past.";
-  }
-
-  return null;
+  return validateAppointmentDate(input.date);
 }
 
 export type AppointmentEditInput = {
@@ -93,12 +105,5 @@ export function validateAppointmentEdit(
   }
   if (!input.date) return "Please select a date.";
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const selectedDate = new Date(`${input.date}T00:00:00`);
-  if (Number.isNaN(selectedDate.getTime()) || selectedDate < today) {
-    return "Please select a date that isn't in the past.";
-  }
-
-  return null;
+  return validateAppointmentDate(input.date);
 }

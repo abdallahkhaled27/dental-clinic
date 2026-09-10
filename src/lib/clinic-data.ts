@@ -63,3 +63,9 @@ export const hours: { day: string; time: string }[] = [
   { day: "Friday", time: "Closed" },
   { day: "Saturday", time: "Closed" },
 ];
+
+// The structured half of `hours` above — used by validateAppointment to
+// actually reject bookings on a closed day, not just display text a
+// patient (or the AI) could still book straight through. Kept in sync
+// with `hours` by hand: 0 = Sunday, ..., 6 = Saturday (JS Date#getDay()).
+export const closedWeekdays = [5, 6]; // Friday, Saturday
