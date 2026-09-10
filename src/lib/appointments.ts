@@ -68,3 +68,37 @@ export function validateAppointment(
 
   return null;
 }
+
+export type AppointmentEditInput = {
+  dentistId: string;
+  date: string;
+  time: string;
+  notes?: string;
+};
+
+// The subset of an appointment staff can actually change from /admin (see
+// the edit page) — not the full NewAppointmentInput. Name, email, phone,
+// and service stay fixed: those identify who the appointment is for and
+// what it's for, not scheduling details. If those are wrong, the right
+// fix is cancelling and rebooking, not editing in place.
+export function validateAppointmentEdit(
+  input: Partial<AppointmentEditInput>,
+  validDentistIds: string[],
+): string | null {
+  if (!input.dentistId || !validDentistIds.includes(input.dentistId)) {
+    return "Please select a valid dentist.";
+  }
+  if (!input.time || !timeSlots.includes(input.time)) {
+    return "Please select a valid time.";
+  }
+  if (!input.date) return "Please select a date.";
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const selectedDate = new Date(`${input.date}T00:00:00`);
+  if (Number.isNaN(selectedDate.getTime()) || selectedDate < today) {
+    return "Please select a date that isn't in the past.";
+  }
+
+  return null;
+}

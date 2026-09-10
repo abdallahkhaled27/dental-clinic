@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAppointments } from "@/lib/appointments-db";
 import { timeSlots } from "@/lib/appointments";
@@ -7,6 +8,7 @@ import { getLeads } from "@/lib/leads";
 import { getPatientsWithAppointmentCount } from "@/lib/patients";
 import { verifySession } from "@/lib/auth";
 import DeletePatientButton from "@/components/DeletePatientButton";
+import DeleteAppointmentButton from "@/components/DeleteAppointmentButton";
 
 export const metadata: Metadata = {
   title: "Staff Dashboard | Bright Smile Dental",
@@ -97,6 +99,7 @@ export default async function AdminPage() {
                 <th className="px-4 py-3 font-medium">Time</th>
                 <th className="px-4 py-3 font-medium">Notes</th>
                 <th className="px-4 py-3 font-medium">Booked</th>
+                <th className="px-4 py-3 font-medium"></th>
               </tr>
             </thead>
             <tbody>
@@ -119,6 +122,20 @@ export default async function AdminPage() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {new Date(appointment.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/appointments/${appointment.id}/edit`}
+                        className="text-sm text-primary transition-opacity hover:opacity-70"
+                      >
+                        Edit
+                      </Link>
+                      <DeleteAppointmentButton
+                        appointmentId={appointment.id}
+                        patientName={appointment.name}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -1,6 +1,6 @@
 import { Prisma, type Appointment, type Dentist } from "@prisma/client";
 import { prisma } from "./prisma";
-import type { NewAppointmentInput } from "./appointments";
+import type { NewAppointmentInput, AppointmentEditInput } from "./appointments";
 
 // Which of the two unique constraints on Appointment (see schema.prisma)
 // a failed create violated, so callers can give a message the patient (or
@@ -70,4 +70,35 @@ export function getAppointmentsForPatient(
     orderBy: { date: "asc" },
     include: { dentist: true },
   });
+}
+
+// Admin-only (see /admin/appointments/[id]/edit) — everything below is
+// staff rescheduling an existing booking, not a patient's own flow.
+
+export function getAppointmentById(
+  id: string,
+): Promise<AppointmentWithDentist | null> {
+  return prisma.appointment.findUnique({
+    where: { id },
+    include: { dentist: true },
+  });
+}
+
+export function updateAppointment(
+  id: string,
+  input: AppointmentEditInput,
+): Promise<Appointment> {
+  return prisma.appointment.update({
+    where: { id },
+    data: {
+      dentistId: input.dentistId,
+      date: input.date,
+      time: input.time,
+      notes: input.notes?.trim() ?? "",
+    },
+  });
+}
+
+export function deleteAppointment(id: string): Promise<Appointment> {
+  return prisma.appointment.delete({ where: { id } });
 }
