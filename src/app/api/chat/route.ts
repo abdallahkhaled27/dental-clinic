@@ -1,6 +1,6 @@
 import type { Dentist } from "@prisma/client";
 import { openai } from "@/lib/openai";
-import { clinicInfo, services, hours, getClinicToday } from "@/lib/clinic-data";
+import { clinicInfo, services, hours, getClinicToday, closedWeekdays } from "@/lib/clinic-data";
 import { retrieveRelevantKnowledge } from "@/lib/rag";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
 import { createAppointment, getSlotConflictKind } from "@/lib/appointments-db";
@@ -22,11 +22,34 @@ function buildInstructions(
 ): string {
   const today = getClinicToday();
 
+  // Handing the model a raw ISO date and expecting it to reliably work
+  // out "what weekday is tomorrow, and are we open then" itself is asking
+  // for the exact class of arithmetic small models get wrong — confirmed
+  // in practice: gpt-4o-mini told a patient "yes, tomorrow's available"
+  // when asked upfront, then only caught that tomorrow was a closed day
+  // once it actually tried booking. Precomputing today's and tomorrow's
+  // weekday (and whether tomorrow is closed) removes that arithmetic from
+  // the model's job entirely for the single most common relative-date
+  // question.
+  const weekdayFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Africa/Cairo",
+    weekday: "long",
+  });
+  const todayAnchor = new Date(`${today}T12:00:00Z`);
+  const todayWeekday = weekdayFormatter.format(todayAnchor);
+  const tomorrowAnchor = new Date(todayAnchor);
+  tomorrowAnchor.setUTCDate(tomorrowAnchor.getUTCDate() + 1);
+  const tomorrow = tomorrowAnchor.toISOString().split("T")[0];
+  const tomorrowWeekday = weekdayFormatter.format(tomorrowAnchor);
+  const tomorrowStatus = closedWeekdays.includes(tomorrowAnchor.getUTCDay())
+    ? "CLOSED — do not offer or accept bookings for this date"
+    : "open";
+
   const bookingParagraph = patientSession
     ? `The patient is signed in as ${patientSession.name} (${patientSession.email}). You CAN book appointments directly using the book_appointment tool. Before calling it, make sure you have the patient's name, email, phone, which service, which dentist, a date, and a time — ask for anything missing rather than guessing (the account holder isn't necessarily who the appointment is for). If the patient has no dentist preference, suggest one whose specialty fits what they need. After a successful booking, confirm the details back to the patient. If booking fails, explain the problem in plain language and ask them to try again.`
     : `The patient is NOT signed in, so you CANNOT book appointments in this conversation — there is no booking tool available to you right now. If they want to book, tell them to sign in or create a free account at /login, then come back and ask again.`;
 
-  const base = `You are a friendly, concise virtual receptionist for ${clinicInfo.name}, a dental clinic. Today's date is ${today}.
+  const base = `You are a friendly, concise virtual receptionist for ${clinicInfo.name}, a dental clinic. Today is ${todayWeekday}, ${today}. Tomorrow is ${tomorrowWeekday}, ${tomorrow} — ${tomorrowStatus}.
 
 Clinic info:
 - Phone: ${clinicInfo.phone}
@@ -37,6 +60,8 @@ Clinic info:
 - Dentists: ${dentists.map((d) => `${d.name}, ${d.specialty} (id: ${d.id})`).join("; ")}
 
 Answer patient questions using only the information provided to you. Never invent specific numbers — prices, costs, statistics, wait times, or anything similarly precise — that aren't explicitly given above; if asked for one you don't have, say you don't have exact pricing and suggest calling the clinic. Keep responses short (2-4 sentences) and friendly.
+
+Before confirming that ANY date is available (even in a quick "is tomorrow free?" reply, before asking for any other details), check it against the Hours above — if it falls on a closed day, say so immediately and suggest the nearest open day. Don't wait until the booking attempt itself to discover this; a patient who already gave you their service, dentist, time, and phone number for a day we're closed has wasted their time.
 
 ${bookingParagraph}
 
