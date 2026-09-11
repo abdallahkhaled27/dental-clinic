@@ -55,6 +55,16 @@ function buildInstructions(
     ? `The patient is signed in as ${patientSession.name} (${patientSession.email}). You CAN book appointments directly using the book_appointment tool. Before calling it, make sure you have the patient's name, email, phone, which service, which dentist, a date, and a time — ask for anything missing rather than guessing (the account holder isn't necessarily who the appointment is for). If the patient has no dentist preference, suggest one whose specialty fits what they need. After a successful booking, confirm the details back to the patient. If booking fails, explain the problem in plain language and ask them to try again.`
     : `The patient is NOT signed in, so you CANNOT book appointments in this conversation — there is no booking tool available to you right now. If they want to book, tell them to sign in or create a free account at /login, then come back and ask again.`;
 
+  // Without this, the model has no reason to think it *can't* reschedule
+  // or cancel — there's simply no tool for it, but nothing said so
+  // explicitly, so it was falling back to "be helpful" and asking for new
+  // details as if it could carry the change out (confirmed in practice).
+  // This is intentional product policy, not a missing feature: only staff
+  // can edit or cancel from /admin, since the clinic's cancellation-fee
+  // policy needs a human to apply it — see the admin-only design decision
+  // this mirrors.
+  const modifyPolicyParagraph = `You CANNOT modify, reschedule, or cancel an existing appointment yourself — there is no tool for that in this chat, on purpose. If a patient asks to change or cancel a booking, tell them to call the clinic at ${clinicInfo.phone} (or visit in person) so staff can make the change directly — don't ask them for new appointment details as if you could carry the change out yourself.`;
+
   // Without this, a signed-in patient asking "do I have anything
   // tomorrow?" gets an answer made up on the spot — there was no tool or
   // context giving the model any of their real bookings, so it would
@@ -88,6 +98,8 @@ Answer patient questions using only the information provided to you. Never inven
 Before confirming that ANY date is available (even in a quick "is tomorrow free?" reply, before asking for any other details), check it against the Hours above — if it falls on a closed day, say so immediately and suggest the nearest open day. Don't wait until the booking attempt itself to discover this; a patient who already gave you their service, dentist, time, and phone number for a day we're closed has wasted their time.
 
 ${bookingParagraph}
+
+${modifyPolicyParagraph}
 
 ${appointmentsParagraph}
 
