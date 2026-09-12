@@ -3,7 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAppointments } from "@/lib/appointments-db";
 import { timeSlots } from "@/lib/appointments";
-import { services } from "@/lib/clinic-data";
+import { services, getClinicToday } from "@/lib/clinic-data";
+import { fieldClass, labelClass } from "@/lib/ui";
 import { getLeads } from "@/lib/leads-db";
 import { getPatientsWithAppointmentCount } from "@/lib/patients";
 import { getDentists } from "@/lib/dentists";
@@ -31,7 +32,11 @@ function serviceName(serviceId: string) {
   return services.find((service) => service.id === serviceId)?.name ?? serviceId;
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; range?: string }>;
+}) {
   // proxy.ts already checks this before the request even reaches here —
   // this is a second, independent check directly in front of the data
   // itself. Belt and suspenders: if a future route ever isn't covered by
@@ -56,6 +61,27 @@ export default async function AdminPage() {
     if (a.date !== b.date) return a.date < b.date ? -1 : 1;
     return timeSlots.indexOf(a.time) - timeSlots.indexOf(b.time);
   });
+
+  // A plain GET form (no client JS) driving these — the whole page is
+  // already server-rendered per request, so a query string is enough; no
+  // need for a Client Component just to filter a table. Only affects which
+  // rows are *displayed* — the stat tile above still counts every
+  // appointment, so staff filtering the table doesn't make the summary
+  // number look wrong.
+  const { q, range } = await searchParams;
+  const query = (q ?? "").trim().toLowerCase();
+  const today = getClinicToday();
+  const filteredAppointments = sortedAppointments.filter((appointment) => {
+    if (query) {
+      const haystack = `${appointment.name} ${appointment.email}`.toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+    if (range === "today") return appointment.date === today;
+    if (range === "upcoming") return appointment.date >= today;
+    if (range === "past") return appointment.date < today;
+    return true;
+  });
+  const hasActiveFilter = Boolean(query) || (range && range !== "all");
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
@@ -101,8 +127,55 @@ export default async function AdminPage() {
 
       <h2 className="mt-12 text-lg font-semibold tracking-tight">Appointments</h2>
 
-      {sortedAppointments.length === 0 ? (
-        <EmptyState message="No appointments yet." />
+      <form method="GET" className="mt-4 flex flex-wrap items-end gap-3">
+        <div className="w-full max-w-[220px]">
+          <label htmlFor="q" className={labelClass}>
+            Search patient
+          </label>
+          <input
+            id="q"
+            name="q"
+            type="text"
+            defaultValue={q ?? ""}
+            placeholder="Name or email"
+            className={fieldClass}
+          />
+        </div>
+        <div className="w-full max-w-[160px]">
+          <label htmlFor="range" className={labelClass}>
+            Show
+          </label>
+          <select id="range" name="range" defaultValue={range ?? "all"} className={fieldClass}>
+            <option value="all">All</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="today">Today</option>
+            <option value="past">Past</option>
+          </select>
+        </div>
+        <button
+          type="submit"
+          className="rounded-full border border-border px-4 py-2 text-sm transition-colors hover:bg-foreground/5"
+        >
+          Filter
+        </button>
+        {hasActiveFilter && (
+          <Link
+            href="/admin"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Clear
+          </Link>
+        )}
+      </form>
+
+      {filteredAppointments.length === 0 ? (
+        <EmptyState
+          message={
+            hasActiveFilter
+              ? "No appointments match this filter."
+              : "No appointments yet."
+          }
+        />
       ) : (
         <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
           <table className="w-full min-w-[760px] border-collapse text-sm">
@@ -120,7 +193,7 @@ export default async function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {sortedAppointments.map((appointment) => (
+              {filteredAppointments.map((appointment) => (
                 <tr
                   key={appointment.id}
                   className="border-b border-border align-top last:border-0 hover:bg-foreground/[0.02]"
