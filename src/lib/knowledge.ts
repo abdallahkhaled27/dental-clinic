@@ -33,7 +33,7 @@ export const knowledgeBase: KnowledgeEntry[] = [
   {
     topic: "First visit",
     content:
-      "For your first visit, please arrive 15 minutes early to complete new patient paperwork, or fill it out online ahead of time if you'd like to save time. Bring a photo ID and your insurance card if you have one. Your first visit typically includes a full exam, X-rays if needed, and a cleaning, and usually takes about 60-90 minutes.",
+      "For your first visit, please arrive 15 minutes early to complete new patient paperwork.",
   },
   {
     topic: "Payment and financing",
