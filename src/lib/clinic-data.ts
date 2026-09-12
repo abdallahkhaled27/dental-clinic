@@ -96,6 +96,24 @@ export function getClinicTomorrow(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" }).format(anchored);
 }
 
+// Weekday + open/closed for an arbitrary YYYY-MM-DD date, in the clinic's
+// timezone — the same noon-UTC-anchor trick as getClinicTomorrow, so the
+// result can't drift a day off near midnight UTC. Exists so the chatbot can
+// look up *any* date a patient names (not just today/tomorrow) without
+// doing the weekday arithmetic itself — see the comment on
+// buildInstructions in the chat route for why that arithmetic can't be
+// trusted to a small model. Returns null for a malformed or unparseable date.
+export function getWeekdayInfo(date: string): { weekday: string; isOpen: boolean } | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const anchor = new Date(`${date}T12:00:00Z`);
+  if (Number.isNaN(anchor.getTime())) return null;
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Africa/Cairo",
+    weekday: "long",
+  }).format(anchor);
+  return { weekday, isOpen: !closedWeekdays.includes(anchor.getUTCDay()) };
+}
+
 // The current time of day in the clinic's timezone, as minutes since
 // midnight — used to reject booking a same-day slot that's already
 // passed (see timeSlotToMinutes/validateAppointmentDate in

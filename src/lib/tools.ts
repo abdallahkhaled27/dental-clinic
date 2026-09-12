@@ -55,6 +55,30 @@ export function buildBookAppointmentTool(dentists: Dentist[]) {
   };
 }
 
+// Lets the model look up the weekday and open/closed status for any date a
+// patient names, instead of computing the weekday itself — see
+// getWeekdayInfo in clinic-data.ts for why that arithmetic isn't safe to
+// leave to the model. Available whether or not the patient is signed in,
+// since this question ("can I book on the 19th?") comes up before booking.
+export const checkDateTool = {
+  type: "function" as const,
+  name: "check_date",
+  description:
+    "Look up the day of the week for a calendar date and whether the clinic is open that day. ALWAYS call this before telling a patient whether a specific date is available or what day of the week it falls on — never work this out yourself, date arithmetic is easy to get wrong.",
+  parameters: {
+    type: "object",
+    properties: {
+      date: {
+        type: "string",
+        description: "Date to check, in YYYY-MM-DD format.",
+      },
+    },
+    required: ["date"],
+    additionalProperties: false,
+  },
+  strict: true,
+};
+
 export const captureLeadTool = {
   type: "function" as const,
   name: "capture_lead",

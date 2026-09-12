@@ -1,6 +1,6 @@
 import type { Dentist } from "@prisma/client";
 import { openai } from "@/lib/openai";
-import { clinicInfo, services, hours, getClinicToday, closedWeekdays } from "@/lib/clinic-data";
+import { clinicInfo, services, hours, getClinicToday, closedWeekdays, getWeekdayInfo } from "@/lib/clinic-data";
 import { retrieveRelevantKnowledge } from "@/lib/rag";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
 import {
@@ -12,7 +12,7 @@ import {
 import { getDentists } from "@/lib/dentists";
 import { validateLead, createLead, type NewLeadInput } from "@/lib/leads";
 import { verifyPatientSession } from "@/lib/patient-auth";
-import { buildBookAppointmentTool, captureLeadTool } from "@/lib/tools";
+import { buildBookAppointmentTool, captureLeadTool, checkDateTool } from "@/lib/tools";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
 import { isValidEmail } from "@/lib/validation";
 import { sendAppointmentConfirmationEmail, sendLeadConfirmationEmail } from "@/lib/email";
@@ -95,7 +95,7 @@ Clinic info:
 
 Answer patient questions using only the information provided to you. Never invent specific numbers — prices, costs, statistics, wait times, or anything similarly precise — that aren't explicitly given above; if asked for one you don't have, say you don't have exact pricing and suggest calling the clinic. Keep responses short (2-4 sentences) and friendly.
 
-Before confirming that ANY date is available (even in a quick "is tomorrow free?" reply, before asking for any other details), check it against the Hours above — if it falls on a closed day, say so immediately and suggest the nearest open day. Don't wait until the booking attempt itself to discover this; a patient who already gave you their service, dentist, time, and phone number for a day we're closed has wasted their time.
+Before confirming that ANY date is available (even in a quick "is tomorrow free?" reply, before asking for any other details), you need to know what day of the week it falls on. For today and tomorrow, that's already given above. For any other date, call the check_date tool — never work out the day of the week yourself, that kind of date arithmetic is unreliable and you WILL get it wrong. Once you know the weekday, check it against the Hours above: if it falls on a closed day, say so immediately and suggest the nearest open day. Don't wait until the booking attempt itself to discover this; a patient who already gave you their service, dentist, time, and phone number for a day we're closed has wasted their time.
 
 ${bookingParagraph}
 
@@ -178,6 +178,27 @@ async function runBookAppointment(
       error: "Something went wrong saving the appointment. Ask the patient to try again shortly, or use the booking form directly.",
     });
   }
+}
+
+function runCheckDate(argsJson: string): string {
+  let input: { date?: string };
+  try {
+    input = JSON.parse(argsJson);
+  } catch {
+    return JSON.stringify({ success: false, error: "Invalid arguments." });
+  }
+
+  const info = input.date ? getWeekdayInfo(input.date) : null;
+  if (!info) {
+    return JSON.stringify({ success: false, error: "Invalid date, expected YYYY-MM-DD." });
+  }
+
+  return JSON.stringify({
+    success: true,
+    date: input.date,
+    weekday: info.weekday,
+    isOpen: info.isOpen,
+  });
 }
 
 async function runCaptureLead(argsJson: string): Promise<string> {
@@ -263,8 +284,8 @@ export async function POST(request: Request) {
   // model structurally cannot call a tool that was never offered to it),
   // not just the prompt wording above.
   const tools = patientSession
-    ? [buildBookAppointmentTool(dentists), captureLeadTool]
-    : [captureLeadTool];
+    ? [buildBookAppointmentTool(dentists), captureLeadTool, checkDateTool]
+    : [captureLeadTool, checkDateTool];
 
   const encoder = new TextEncoder();
 
@@ -332,6 +353,9 @@ export async function POST(request: Request) {
                 }
                 if (call.name === "capture_lead") {
                   return runCaptureLead(call.arguments);
+                }
+                if (call.name === "check_date") {
+                  return runCheckDate(call.arguments);
                 }
                 return JSON.stringify({ success: false, error: "Unknown tool." });
               })(),
