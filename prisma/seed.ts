@@ -6,7 +6,11 @@ async function main() {
   console.log(`Seeding ${knowledgeBase.length} knowledge base entries...`);
 
   // Wipe existing entries so re-running this script doesn't create
-  // duplicates — fine for a small, code-defined knowledge base like ours.
+  // duplicates — fine for a fresh/dev database, but this is now
+  // DESTRUCTIVE against a live one: staff can edit the knowledge base
+  // directly from /admin (see knowledge-db.ts), and this wipes any of
+  // those edits back to whatever's hardcoded in knowledge.ts. Only run
+  // this against a database staff haven't started editing yet.
   await prisma.knowledgeChunk.deleteMany();
 
   for (const entry of knowledgeBase) {

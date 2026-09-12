@@ -7,11 +7,13 @@ import { services } from "@/lib/clinic-data";
 import { getLeads } from "@/lib/leads-db";
 import { getPatientsWithAppointmentCount } from "@/lib/patients";
 import { getDentists } from "@/lib/dentists";
+import { getKnowledgeChunks } from "@/lib/knowledge-db";
 import { verifySession } from "@/lib/auth";
 import DeletePatientButton from "@/components/DeletePatientButton";
 import DeleteAppointmentButton from "@/components/DeleteAppointmentButton";
 import DeleteDentistButton from "@/components/DeleteDentistButton";
 import DeleteLeadButton from "@/components/DeleteLeadButton";
+import DeleteKnowledgeButton from "@/components/DeleteKnowledgeButton";
 import LeadStatusSelect from "@/components/LeadStatusSelect";
 import { isValidLeadStatus } from "@/lib/leads";
 
@@ -39,11 +41,12 @@ export default async function AdminPage() {
     redirect("/admin/login?next=/admin");
   }
 
-  const [appointments, leads, patients, dentists] = await Promise.all([
+  const [appointments, leads, patients, dentists, knowledgeChunks] = await Promise.all([
     getAppointments(),
     getLeads(),
     getPatientsWithAppointmentCount(),
     getDentists(),
+    getKnowledgeChunks(),
   ]);
 
   // Prisma already sorted by date, but "9:00 AM" vs "10:00 AM" doesn't sort
@@ -73,7 +76,7 @@ export default async function AdminPage() {
         </form>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <p className="text-sm text-muted-foreground">Appointments booked</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{sortedAppointments.length}</p>
@@ -89,6 +92,10 @@ export default async function AdminPage() {
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <p className="text-sm text-muted-foreground">Dentists</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{dentists.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">Knowledge base entries</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{knowledgeChunks.length}</p>
         </div>
       </div>
 
@@ -279,6 +286,58 @@ export default async function AdminPage() {
                         Edit
                       </Link>
                       <DeleteDentistButton dentistId={dentist.id} dentistName={dentist.name} />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold tracking-tight">Knowledge Base</h2>
+        <Link
+          href="/admin/knowledge/new"
+          className="rounded-full border border-border px-4 py-1.5 text-sm transition-colors hover:bg-foreground/5"
+        >
+          Add entry
+        </Link>
+      </div>
+
+      {knowledgeChunks.length === 0 ? (
+        <EmptyState message="No knowledge base entries yet." />
+      ) : (
+        <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
+          <table className="w-full min-w-[600px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border bg-foreground/[0.02] text-left text-muted-foreground">
+                <th className="px-4 py-3 font-medium">Topic</th>
+                <th className="px-4 py-3 font-medium">Content</th>
+                <th className="px-4 py-3 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {knowledgeChunks.map((chunk) => (
+                <tr
+                  key={chunk.id}
+                  className="border-b border-border align-top last:border-0 hover:bg-foreground/[0.02]"
+                >
+                  <td className="px-4 py-3 font-medium">{chunk.topic}</td>
+                  <td className="max-w-md px-4 py-3 text-muted-foreground">
+                    {chunk.content.length > 140
+                      ? `${chunk.content.slice(0, 140)}…`
+                      : chunk.content}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/knowledge/${chunk.id}/edit`}
+                        className="text-sm text-primary transition-opacity hover:opacity-70"
+                      >
+                        Edit
+                      </Link>
+                      <DeleteKnowledgeButton chunkId={chunk.id} topic={chunk.topic} />
                     </div>
                   </td>
                 </tr>

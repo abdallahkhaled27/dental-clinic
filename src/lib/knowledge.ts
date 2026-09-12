@@ -1,14 +1,23 @@
-// The clinic's knowledge base — FAQ answers and policies too long or too
-// numerous to reasonably hardcode into a chat system prompt (see
+// The clinic's *default* knowledge base — FAQ answers and policies too long
+// or too numerous to reasonably hardcode into a chat system prompt (see
 // clinic-data.ts for the small set of structured facts that ARE small
-// enough to always include). Each entry becomes one row in the
-// KnowledgeChunk table, embedded once by prisma/seed.ts, then retrieved
-// per-question at chat time by src/lib/rag.ts.
+// enough to always include). This array only seeds a fresh database
+// (prisma/seed.ts) — from then on, staff manage the real, live knowledge
+// base from /admin (see knowledge-db.ts), which re-embeds and writes
+// straight to the KnowledgeChunk table. Re-running the seed script after
+// going live wipes those live edits back to whatever's written here, so
+// don't run it against a database staff have already edited through.
 
 export type KnowledgeEntry = {
   topic: string;
   content: string;
 };
+
+export function validateKnowledgeEntry(input: Partial<KnowledgeEntry>): string | null {
+  if (!input.topic?.trim()) return "Topic is required.";
+  if (!input.content?.trim()) return "Content is required.";
+  return null;
+}
 
 export const knowledgeBase: KnowledgeEntry[] = [
   {
