@@ -11,6 +11,7 @@ import { verifySession } from "@/lib/auth";
 import DeletePatientButton from "@/components/DeletePatientButton";
 import DeleteAppointmentButton from "@/components/DeleteAppointmentButton";
 import DeleteDentistButton from "@/components/DeleteDentistButton";
+import DeleteLeadButton from "@/components/DeleteLeadButton";
 import LeadStatusSelect from "@/components/LeadStatusSelect";
 import { isValidLeadStatus } from "@/lib/leads";
 
@@ -167,6 +168,7 @@ export default async function AdminPage() {
                 <th className="px-4 py-3 font-medium">Interested in</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Captured</th>
+                <th className="px-4 py-3 font-medium"></th>
               </tr>
             </thead>
             <tbody>
@@ -189,6 +191,9 @@ export default async function AdminPage() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {new Date(lead.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    <DeleteLeadButton leadId={lead.id} leadName={lead.name} />
                   </td>
                 </tr>
               ))}

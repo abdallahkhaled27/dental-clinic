@@ -19,3 +19,7 @@ export function getLeads(): Promise<Lead[]> {
 export function updateLeadStatus(id: string, status: LeadStatus): Promise<Lead> {
   return prisma.lead.update({ where: { id }, data: { status } });
 }
+
+export function deleteLead(id: string): Promise<Lead> {
+  return prisma.lead.delete({ where: { id } });
+}
