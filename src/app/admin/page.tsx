@@ -6,9 +6,11 @@ import { timeSlots } from "@/lib/appointments";
 import { services } from "@/lib/clinic-data";
 import { getLeads } from "@/lib/leads-db";
 import { getPatientsWithAppointmentCount } from "@/lib/patients";
+import { getDentists } from "@/lib/dentists";
 import { verifySession } from "@/lib/auth";
 import DeletePatientButton from "@/components/DeletePatientButton";
 import DeleteAppointmentButton from "@/components/DeleteAppointmentButton";
+import DeleteDentistButton from "@/components/DeleteDentistButton";
 import LeadStatusSelect from "@/components/LeadStatusSelect";
 import { isValidLeadStatus } from "@/lib/leads";
 
@@ -36,10 +38,11 @@ export default async function AdminPage() {
     redirect("/admin/login?next=/admin");
   }
 
-  const [appointments, leads, patients] = await Promise.all([
+  const [appointments, leads, patients, dentists] = await Promise.all([
     getAppointments(),
     getLeads(),
     getPatientsWithAppointmentCount(),
+    getDentists(),
   ]);
 
   // Prisma already sorted by date, but "9:00 AM" vs "10:00 AM" doesn't sort
@@ -69,7 +72,7 @@ export default async function AdminPage() {
         </form>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <p className="text-sm text-muted-foreground">Appointments booked</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{sortedAppointments.length}</p>
@@ -81,6 +84,10 @@ export default async function AdminPage() {
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <p className="text-sm text-muted-foreground">Patient accounts</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{patients.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">Dentists</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{dentists.length}</p>
         </div>
       </div>
 
@@ -220,6 +227,54 @@ export default async function AdminPage() {
                   </td>
                   <td className="px-4 py-3">
                     <DeletePatientButton patientId={patient.id} patientName={patient.name} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold tracking-tight">Dentists</h2>
+        <Link
+          href="/admin/dentists/new"
+          className="rounded-full border border-border px-4 py-1.5 text-sm transition-colors hover:bg-foreground/5"
+        >
+          Add dentist
+        </Link>
+      </div>
+
+      {dentists.length === 0 ? (
+        <EmptyState message="No dentists yet." />
+      ) : (
+        <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
+          <table className="w-full min-w-[500px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border bg-foreground/[0.02] text-left text-muted-foreground">
+                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Specialty</th>
+                <th className="px-4 py-3 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {dentists.map((dentist) => (
+                <tr
+                  key={dentist.id}
+                  className="border-b border-border align-top last:border-0 hover:bg-foreground/[0.02]"
+                >
+                  <td className="px-4 py-3 font-medium">{dentist.name}</td>
+                  <td className="px-4 py-3">{dentist.specialty}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/dentists/${dentist.id}/edit`}
+                        className="text-sm text-primary transition-opacity hover:opacity-70"
+                      >
+                        Edit
+                      </Link>
+                      <DeleteDentistButton dentistId={dentist.id} dentistName={dentist.name} />
+                    </div>
                   </td>
                 </tr>
               ))}
