@@ -10,7 +10,8 @@ import {
   type AppointmentWithDentist,
 } from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
-import { validateLead, createLead, type NewLeadInput } from "@/lib/leads";
+import { validateLead, type NewLeadInput } from "@/lib/leads";
+import { createLead } from "@/lib/leads-db";
 import { verifyPatientSession } from "@/lib/patient-auth";
 import { buildBookAppointmentTool, captureLeadTool, checkDateTool } from "@/lib/tools";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";

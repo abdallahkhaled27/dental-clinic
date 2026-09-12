@@ -4,11 +4,13 @@ import { redirect } from "next/navigation";
 import { getAppointments } from "@/lib/appointments-db";
 import { timeSlots } from "@/lib/appointments";
 import { services } from "@/lib/clinic-data";
-import { getLeads } from "@/lib/leads";
+import { getLeads } from "@/lib/leads-db";
 import { getPatientsWithAppointmentCount } from "@/lib/patients";
 import { verifySession } from "@/lib/auth";
 import DeletePatientButton from "@/components/DeletePatientButton";
 import DeleteAppointmentButton from "@/components/DeleteAppointmentButton";
+import LeadStatusSelect from "@/components/LeadStatusSelect";
+import { isValidLeadStatus } from "@/lib/leads";
 
 export const metadata: Metadata = {
   title: "Staff Dashboard | Bright Smile Dental",
@@ -170,9 +172,13 @@ export default async function AdminPage() {
                   <td className="px-4 py-3">{lead.contact}</td>
                   <td className="max-w-xs px-4 py-3 text-muted-foreground">{lead.interest}</td>
                   <td className="px-4 py-3">
-                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                      {lead.status}
-                    </span>
+                    {isValidLeadStatus(lead.status) ? (
+                      <LeadStatusSelect leadId={lead.id} status={lead.status} />
+                    ) : (
+                      <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                        {lead.status}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {new Date(lead.createdAt).toLocaleString()}
