@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAppointmentsNeedingReminder, markReminderSent } from "@/lib/appointments-db";
 import { sendAppointmentReminderEmail } from "@/lib/email";
-import { getClinicTomorrow } from "@/lib/clinic-data";
+import { getClinicTomorrow, siteUrl, depositAmountEgp } from "@/lib/clinic-data";
+import { createDepositCheckoutSession } from "@/lib/payments";
 
 // Triggered once a day by Vercel Cron (see vercel.json) — not reachable by
 // a patient or a browser. Anyone who *does* guess the URL still can't
@@ -30,6 +31,24 @@ export async function GET(request: Request) {
   // are retried or reported.
   for (const appointment of appointments) {
     try {
+      // A stale, unpaid deposit gets a fresh checkout link here — the one
+      // from booking time is almost certainly an expired Stripe session
+      // by now (Checkout sessions expire after 24 hours). No request
+      // origin to read from on a cron trigger, so siteUrl stands in for
+      // it; locale isn't tracked on the appointment itself, so this
+      // always renders in English regardless of which language the
+      // patient originally booked in.
+      const checkoutUrl =
+        appointment.depositStatus === "pending"
+          ? await createDepositCheckoutSession(appointment, siteUrl, "en").catch((error) => {
+              console.error(
+                `Failed to create a reminder deposit link for appointment ${appointment.id}:`,
+                error,
+              );
+              return null;
+            })
+          : null;
+
       await sendAppointmentReminderEmail({
         to: appointment.email,
         patientName: appointment.name,
@@ -37,6 +56,8 @@ export async function GET(request: Request) {
         dentistName: appointment.dentist.name,
         date: appointment.date,
         time: appointment.time,
+        depositAmountEgp,
+        checkoutUrl,
       });
       await markReminderSent(appointment.id);
       sent += 1;

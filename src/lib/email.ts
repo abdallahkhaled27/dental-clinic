@@ -94,12 +94,23 @@ export async function sendAppointmentReminderEmail(params: {
   dentistName: string;
   date: string;
   time: string;
+  // Present when the deposit is still unpaid the day before the
+  // appointment — same reasoning as the confirmation email: don't let a
+  // reminder read as "everything's set" when 200 EGP is still owed.
+  // checkoutUrl here is always a freshly-created session (see the cron
+  // route), never the one from booking time — Stripe Checkout sessions
+  // expire after 24 hours, so the original link is almost always dead by
+  // the time a day-before reminder goes out.
+  depositAmountEgp?: number;
+  checkoutUrl?: string | null;
 }): Promise<void> {
   const resend = getResendClient();
   if (!resend) {
     console.warn("RESEND_API_KEY not set — skipping appointment reminder email.");
     return;
   }
+
+  const depositPending = Boolean(params.checkoutUrl && params.depositAmountEgp);
 
   try {
     await resend.emails.send({
@@ -115,6 +126,12 @@ export async function sendAppointmentReminderEmail(params: {
           <li><strong>Date:</strong> ${params.date}</li>
           <li><strong>Time:</strong> ${params.time}</li>
         </ul>
+        ${
+          depositPending
+            ? `<p><strong>Note:</strong> the EGP ${params.depositAmountEgp} booking deposit for this appointment hasn't been paid yet — please settle it before you arrive:</p>
+        <p><a href="${params.checkoutUrl}">Pay deposit now</a></p>`
+            : ""
+        }
         <p>Need to reschedule or cancel? Call us at ${clinicInfo.phone}.</p>
         <p>— ${clinicInfo.name}</p>
       `,
