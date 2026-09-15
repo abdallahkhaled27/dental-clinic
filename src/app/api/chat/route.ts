@@ -1,5 +1,5 @@
 import type { Dentist, Service } from "@prisma/client";
-import { openai } from "@/lib/openai";
+import { getOpenAI } from "@/lib/openai";
 import { clinicInfo, hours, getClinicToday, closedWeekdays, getWeekdayInfo } from "@/lib/clinic-data";
 import { retrieveRelevantKnowledge } from "@/lib/rag";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
@@ -346,7 +346,7 @@ export async function POST(request: Request) {
         // report the result to the patient. The cap just prevents a
         // runaway loop if the model kept calling tools indefinitely.
         for (let turn = 0; turn < 4; turn++) {
-          const stream = await openai.responses.create({
+          const stream = await getOpenAI().responses.create({
             model: "gpt-4o-mini",
             instructions,
             tools,

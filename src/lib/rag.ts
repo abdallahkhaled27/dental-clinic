@@ -1,10 +1,10 @@
-import { openai } from "./openai";
+import { getOpenAI } from "./openai";
 import { prisma } from "./prisma";
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
 
 export async function embedText(text: string): Promise<number[]> {
-  const response = await openai.embeddings.create({
+  const response = await getOpenAI().embeddings.create({
     model: EMBEDDING_MODEL,
     input: text,
   });
