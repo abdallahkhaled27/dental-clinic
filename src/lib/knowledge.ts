@@ -28,7 +28,7 @@ export const knowledgeBase: KnowledgeEntry[] = [
   {
     topic: "Cancellation policy",
     content:
-      "We ask that you give at least 24 hours' notice if you need to cancel or reschedule an appointment. Cancellations made with less than 24 hours' notice, or missed appointments, may incur a $50 cancellation fee. Call us at +20 155 555 2764 as soon as you know you need to reschedule.",
+      "We ask that you give at least 24 hours' notice if you need to cancel or reschedule an appointment. Appointments booked online require a 200 EGP deposit to secure the slot; if you cancel with less than 24 hours' notice, or don't show up, that deposit is kept and isn't refunded. Call us at +20 155 555 2764 as soon as you know you need to reschedule.",
   },
   {
     topic: "First visit",
@@ -38,7 +38,7 @@ export const knowledgeBase: KnowledgeEntry[] = [
   {
     topic: "Payment and financing",
     content:
-      "We accept cash, all major credit cards, and offer a monthly payment plan through CareCredit for treatments over $500, with 0% interest options for 6 or 12 months on approved credit. Payment is due at the time of service unless other arrangements have been made in advance with our front desk.",
+      "We accept cash and all major credit cards. Booking online requires a 200 EGP deposit, paid at the time of booking to secure your appointment slot. The rest of the cost for your treatment is paid at the clinic, in person, at the time of your visit.",
   },
   {
     topic: "Dental emergencies",
