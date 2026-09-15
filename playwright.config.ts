@@ -11,6 +11,7 @@ import { defineConfig, devices } from "@playwright/test";
 // itself.
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
   // Serial, not parallel: tests share one real database rather than an
   // isolated one per worker, so two tests racing to register the same
   // kind of account (or reading global-ish state like the admin

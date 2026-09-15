@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Fast, cheap checks first — no real database needed (confirmed by
+  # actually running a build with Docker stopped and only a placeholder
+  # DATABASE_URL: Prisma's client generation only reads the schema file,
+  # it never connects). The e2e job below depends on this passing before
+  # it spends time spinning up Postgres and a browser.
+  checks:
+    name: Lint, build, unit tests
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+
+  # Runs against a real, ephemeral Postgres — the same stack every manual
+  # end-to-end check in this project has used, not a mocked environment
+  # (see playwright.config.ts). Starts genuinely empty: migrate deploy
+  # creates the schema (the services table's seed data included, since
+  # that's baked into the migration itself), and Playwright's own global
+  # setup adds the one dentist row nothing else seeds.
+  e2e:
+    name: End-to-end tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: checks
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: dental_clinic
+          POSTGRES_PASSWORD: dental_clinic
+          POSTGRES_DB: dental_clinic
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: "postgresql://dental_clinic:dental_clinic@localhost:5432/dental_clinic"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

@@ -49,10 +49,18 @@ export async function deleteStaffByEmail(email: string): Promise<void> {
   await prisma.staffUser.delete({ where: { id: staff.id } });
 }
 
-export async function getFirstDentistId(): Promise<string> {
-  const dentist = await prisma.dentist.findFirst();
-  if (!dentist) throw new Error("No dentist seeded — run prisma/seed.ts first.");
-  return dentist.id;
+// The booking tests need at least one real dentist to pick from — on a
+// completely fresh database (a first-time clone, or CI's ephemeral
+// Postgres service, which starts genuinely empty since prisma/seed.ts
+// only seeds the knowledge base), there isn't one yet, and nothing else
+// creates one. Idempotent: does nothing if a dentist already exists, so
+// this never touches an existing local dev database's real roster.
+export async function ensureDentistExists(): Promise<void> {
+  const existing = await prisma.dentist.findFirst();
+  if (existing) return;
+  await prisma.dentist.create({
+    data: { name: "Dr. Playwright Seed", specialty: "General Dentistry" },
+  });
 }
 
 // A date two weeks out that isn't a Friday or Saturday in the *clinic's*
