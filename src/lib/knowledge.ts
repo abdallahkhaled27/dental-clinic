@@ -23,7 +23,7 @@ export const knowledgeBase: KnowledgeEntry[] = [
   {
     topic: "Insurance",
     content:
-      "We accept most major PPO dental insurance plans, including Delta Dental, Cigna, MetLife, and Aetna. We do not currently accept HMO or DMO plans. We recommend calling our office with your insurance details before your visit so we can verify your specific coverage and estimate any out-of-pocket cost.",
+      "We work with a range of health insurance providers for dental coverage. Since coverage varies by plan, we recommend calling our office with your insurance details before your visit so we can verify your specific coverage and estimate any out-of-pocket cost.",
   },
   {
     topic: "Cancellation policy",
@@ -68,6 +68,6 @@ export const knowledgeBase: KnowledgeEntry[] = [
   {
     topic: "Parking and accessibility",
     content:
-      "Free parking is available directly in front of our building on Main Street, with additional spaces in the lot behind the building. Our office is fully wheelchair accessible, with a ramp at the main entrance and an accessible restroom on the ground floor.",
+      "Free parking is available directly in front of our building in Rehab City, New Cairo, with additional spaces nearby. Our office is fully wheelchair accessible, with a ramp at the main entrance and an accessible restroom on the ground floor.",
   },
 ];
