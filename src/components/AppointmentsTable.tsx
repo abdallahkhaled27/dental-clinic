@@ -15,6 +15,7 @@ import DeleteAppointmentButton from "@/components/DeleteAppointmentButton";
 type AppointmentRow = Appointment & { dentist: Dentist; service: Service };
 
 type RangeFilter = "all" | "upcoming" | "today" | "past";
+type DepositFilter = "all" | "paid" | "pending" | "refunded";
 
 // Filters entirely client-side, live as staff type — the full appointment
 // list is already loaded on the page (no pagination), so there's nothing
@@ -28,6 +29,7 @@ export default function AppointmentsTable({
 }) {
   const [query, setQuery] = useState("");
   const [range, setRange] = useState<RangeFilter>("all");
+  const [depositFilter, setDepositFilter] = useState<DepositFilter>("all");
 
   const filteredAppointments = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -36,14 +38,15 @@ export default function AppointmentsTable({
         const haystack = `${appointment.name} ${appointment.email}`.toLowerCase();
         if (!haystack.includes(normalizedQuery)) return false;
       }
+      if (depositFilter !== "all" && appointment.depositStatus !== depositFilter) return false;
       if (range === "today") return appointment.date === today;
       if (range === "upcoming") return appointment.date >= today;
       if (range === "past") return appointment.date < today;
       return true;
     });
-  }, [appointments, query, range, today]);
+  }, [appointments, query, range, depositFilter, today]);
 
-  const hasActiveFilter = Boolean(query.trim()) || range !== "all";
+  const hasActiveFilter = Boolean(query.trim()) || range !== "all" || depositFilter !== "all";
 
   return (
     <>
@@ -77,12 +80,29 @@ export default function AppointmentsTable({
             <option value="past">Past</option>
           </select>
         </div>
+        <div className="w-full max-w-[160px]">
+          <label htmlFor="deposit" className={labelClass}>
+            Deposit
+          </label>
+          <select
+            id="deposit"
+            value={depositFilter}
+            onChange={(event) => setDepositFilter(event.target.value as DepositFilter)}
+            className={fieldClass}
+          >
+            <option value="all">All</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+            <option value="refunded">Refunded</option>
+          </select>
+        </div>
         {hasActiveFilter && (
           <button
             type="button"
             onClick={() => {
               setQuery("");
               setRange("all");
+              setDepositFilter("all");
             }}
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
