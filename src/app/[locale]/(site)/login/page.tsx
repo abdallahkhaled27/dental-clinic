@@ -6,9 +6,15 @@ import { verifyPatientSession } from "@/lib/patient-auth";
 import PatientLoginForm from "@/components/PatientLoginForm";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 
-export const metadata: Metadata = {
-  title: "Login | Bright Smile Dental",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Metadata.login" });
+  return { title: t("title"), robots: { index: false, follow: false } };
+}
 
 export const dynamic = "force-dynamic";
 

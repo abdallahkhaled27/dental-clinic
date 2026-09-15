@@ -19,6 +19,12 @@ export const clinicInfo = {
   whatsapp: "201555552764",
 };
 
+// The one place the production domain is written down — metadataBase,
+// the sitemap, robots.txt, and the JSON-LD structured data all read this
+// instead of repeating the literal string, so there's exactly one spot to
+// update if the domain ever changes.
+export const siteUrl = "https://dentalclinic.abdallahyoussef.com";
+
 export const services: Service[] = [
   {
     id: "checkup",

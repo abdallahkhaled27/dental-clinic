@@ -2,9 +2,15 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import ForgotPasswordForm from "@/components/ForgotPasswordForm";
 
-export const metadata: Metadata = {
-  title: "Forgot password | Bright Smile Dental",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Metadata.forgotPassword" });
+  return { title: t("title"), robots: { index: false, follow: false } };
+}
 
 export default async function ForgotPasswordPage() {
   const t = await getTranslations("ForgotPassword");

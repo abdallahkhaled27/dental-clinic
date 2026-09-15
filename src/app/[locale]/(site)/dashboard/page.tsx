@@ -8,9 +8,17 @@ import { timeSlots } from "@/lib/appointments";
 import { services } from "@/lib/clinic-data";
 import { verifyPatientSession } from "@/lib/patient-auth";
 
-export const metadata: Metadata = {
-  title: "My Appointments | Bright Smile Dental",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Metadata.dashboard" });
+  // A patient's own appointments — never anything a search result should
+  // point to, on top of already being behind a login.
+  return { title: t("title"), robots: { index: false, follow: false } };
+}
 
 // Same reasoning as /admin: always fetch fresh, never prerender.
 export const dynamic = "force-dynamic";

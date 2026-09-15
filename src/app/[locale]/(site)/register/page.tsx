@@ -5,9 +5,15 @@ import { localizeHref } from "@/i18n/routing";
 import { verifyPatientSession } from "@/lib/patient-auth";
 import PatientRegisterForm from "@/components/PatientRegisterForm";
 
-export const metadata: Metadata = {
-  title: "Create Account | Bright Smile Dental",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Metadata.register" });
+  return { title: t("title"), robots: { index: false, follow: false } };
+}
 
 export const dynamic = "force-dynamic";
 

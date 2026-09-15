@@ -6,9 +6,18 @@ import BookingForm from "@/components/BookingForm";
 import { getDentists } from "@/lib/dentists";
 import { verifyPatientSession } from "@/lib/patient-auth";
 
-export const metadata: Metadata = {
-  title: "Book an Appointment | Bright Smile Dental",
-};
+// Excluded from robots.txt already (see app/robots.ts) — noindex here too
+// as a direct, page-level signal: a patient's own booking form has no
+// content that should ever show up in search results.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Metadata.book" });
+  return { title: t("title"), robots: { index: false, follow: false } };
+}
 
 // The dentist list now comes from the database (see schema.prisma) rather
 // than static code, so this page needs a live DB connection per request —

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Cairo } from "next/font/google";
 import { headers } from "next/headers";
+import { siteUrl } from "@/lib/clinic-data";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,6 +26,10 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
+  // Lets every page's relative OG image / canonical URL resolve to a real
+  // absolute URL — required for Open Graph tags to work at all, since
+  // crawlers fetch them outside the context of any particular request.
+  metadataBase: new URL(siteUrl),
   title: "Bright Smile Dental",
   description: "Modern dental care for the whole family.",
 };

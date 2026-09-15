@@ -1,4 +1,28 @@
 {
+  "Metadata": {
+    "home": {
+      "title": "Bright Smile Dental — Dental Clinic in New Cairo",
+      "description": "Modern dental care for the whole family in Rehab City, New Cairo. Book checkups, whitening, orthodontics, and more online."
+    },
+    "book": {
+      "title": "Book an Appointment | Bright Smile Dental"
+    },
+    "login": {
+      "title": "Login | Bright Smile Dental"
+    },
+    "register": {
+      "title": "Create Account | Bright Smile Dental"
+    },
+    "forgotPassword": {
+      "title": "Forgot password | Bright Smile Dental"
+    },
+    "resetPassword": {
+      "title": "Reset password | Bright Smile Dental"
+    },
+    "dashboard": {
+      "title": "My Appointments | Bright Smile Dental"
+    }
+  },
   "Nav": {
     "services": "Services",
     "about": "About",
