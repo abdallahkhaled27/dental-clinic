@@ -43,7 +43,7 @@ export const knowledgeBase: KnowledgeEntry[] = [
   {
     topic: "Dental emergencies",
     content:
-      "We reserve same-day slots for dental emergencies such as severe tooth pain, a knocked-out tooth, a broken tooth, or significant swelling. Call our office as early as possible and describe your symptoms so we can prioritize your visit. Outside of business hours, our voicemail includes instructions for reaching the on-call dentist for true emergencies.",
+      "We reserve same-day slots for dental emergencies such as severe tooth pain, a knocked-out tooth, a broken tooth, or significant swelling. Call our office as early as possible during business hours and describe your symptoms so we can prioritize your visit. For a serious emergency outside business hours, please go to your nearest hospital or emergency room.",
   },
   {
     topic: "Teeth whitening details",
@@ -58,7 +58,7 @@ export const knowledgeBase: KnowledgeEntry[] = [
   {
     topic: "Pediatric dentistry",
     content:
-      "We welcome patients starting from age 1, following the American Academy of Pediatric Dentistry's recommendation for a first visit by a child's first birthday or within 6 months of their first tooth erupting. Our pediatric appointments are designed to be gentle and low-stress, with a focus on building comfort with dental visits early on.",
+      "We welcome patients starting from age 1 — the general recommendation is a first dental visit by a child's first birthday or within 6 months of their first tooth erupting. Our pediatric appointments are designed to be gentle and low-stress, with a focus on building comfort with dental visits early on.",
   },
   {
     topic: "Post-treatment care",
