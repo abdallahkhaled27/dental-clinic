@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { clinicInfo } from "@/lib/clinic-data";
 import { Link } from "@/i18n/navigation";
 import PatientNavLink from "./PatientNavLink";
+import LanguageSwitcher from "./LanguageSwitcher";
 import MobileMenu from "./MobileMenu";
 
 export default async function Header() {
@@ -27,6 +28,7 @@ export default async function Header() {
         </nav>
 
         <div className="hidden items-center gap-6 sm:flex">
+          <LanguageSwitcher />
           <PatientNavLink />
           <Link
             href="/book"

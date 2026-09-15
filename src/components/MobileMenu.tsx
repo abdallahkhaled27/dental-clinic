@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import PatientNavLink from "./PatientNavLink";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,6 +41,9 @@ export default function MobileMenu() {
             <Link href="/#contact" onClick={() => setIsOpen(false)} className="text-foreground/80 hover:text-foreground">
               {t("contact")}
             </Link>
+            <div className="border-t border-border pt-4">
+              <LanguageSwitcher onClick={() => setIsOpen(false)} />
+            </div>
             <div className="border-t border-border pt-4">
               <PatientNavLink />
             </div>
