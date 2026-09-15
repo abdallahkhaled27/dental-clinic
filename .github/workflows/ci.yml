@@ -60,6 +60,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # npm run build (the checks job) generates the Prisma client as a
+      # side effect of its own "prisma generate && next build" script,
+      # but this job runs on its own independent checkout/node_modules
+      # and never calls build — confirmed the hard way, by an actual CI
+      # run failing with "Cannot find module '.prisma/client/default'"
+      # that never reproduced locally, since local node_modules already
+      # had a generated client left over from earlier manual testing.
+      - run: npx prisma generate
       - run: npx prisma migrate deploy
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
