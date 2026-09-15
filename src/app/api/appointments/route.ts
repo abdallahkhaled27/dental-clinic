@@ -7,6 +7,7 @@ import { verifyPatientSession } from "@/lib/patient-auth";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
 import { sendAppointmentConfirmationEmail, sendStaffNewAppointmentEmail } from "@/lib/email";
 import { createDepositCheckoutSession } from "@/lib/payments";
+import { depositAmountEgp } from "@/lib/clinic-data";
 
 export async function POST(request: Request) {
   // 5 bookings per minute per IP — a real patient books once, not in bulk.
@@ -58,6 +59,21 @@ export async function POST(request: Request) {
 
     const dentist = dentists.find((d) => d.id === appointment.dentistId);
     const service = services.find((s) => s.id === appointment.serviceId);
+
+    // Created before the confirmation email so that email can say the
+    // right thing — "confirmed" if no deposit is owed, or "here's the
+    // link to pay" if one is. A null checkoutUrl (Stripe unconfigured)
+    // just means the booking is already fully confirmed. The appointment
+    // itself is already saved regardless of what happens here or below.
+    const checkoutUrl = await createDepositCheckoutSession(
+      appointment,
+      new URL(request.url).origin,
+      locale,
+    ).catch((error) => {
+      console.error("Failed to create deposit checkout session:", error);
+      return null;
+    });
+
     // Awaited, not fire-and-forget: on Vercel, a serverless function's
     // execution can be frozen the moment the response is sent, so an
     // un-awaited promise isn't reliably guaranteed to finish sending. The
@@ -70,6 +86,8 @@ export async function POST(request: Request) {
       dentistName: dentist?.name ?? "your dentist",
       date: appointment.date,
       time: appointment.time,
+      depositAmountEgp,
+      checkoutUrl,
     });
     await sendStaffNewAppointmentEmail({
       patientName: appointment.name,
@@ -79,21 +97,6 @@ export async function POST(request: Request) {
       dentistName: dentist?.name ?? "unknown dentist",
       date: appointment.date,
       time: appointment.time,
-    });
-
-    // The appointment is already saved and confirmed by email at this
-    // point regardless of what happens below — same reasoning as the
-    // email calls above never blocking the booking: a deposit link is a
-    // next step, not a condition of the booking having succeeded. A null
-    // checkoutUrl (Stripe unconfigured) just means the client shows the
-    // normal success screen instead of redirecting to pay.
-    const checkoutUrl = await createDepositCheckoutSession(
-      appointment,
-      new URL(request.url).origin,
-      locale,
-    ).catch((error) => {
-      console.error("Failed to create deposit checkout session:", error);
-      return null;
     });
 
     return NextResponse.json({ appointment, checkoutUrl }, { status: 201 });

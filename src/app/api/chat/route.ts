@@ -174,6 +174,19 @@ async function runBookAppointment(
 
     const dentist = dentists.find((d) => d.id === appointment.dentistId);
     const service = services.find((s) => s.id === appointment.serviceId);
+
+    // Same graceful-degradation as the manual booking route: a null
+    // depositUrl (Stripe unconfigured, or the session failed to create)
+    // never undoes the booking above — the appointment is already saved.
+    // Created before the confirmation email so the email can say the
+    // right thing (see the note in the manual booking route).
+    const depositUrl = await createDepositCheckoutSession(appointment, origin, locale).catch(
+      (error) => {
+        console.error("Failed to create deposit checkout session (chat tool call):", error);
+        return null;
+      },
+    );
+
     // Awaited for the same reason as the booking form's route — see the
     // note there.
     await sendAppointmentConfirmationEmail({
@@ -183,6 +196,8 @@ async function runBookAppointment(
       dentistName: dentist?.name ?? "your dentist",
       date: appointment.date,
       time: appointment.time,
+      depositAmountEgp,
+      checkoutUrl: depositUrl,
     });
     await sendStaffNewAppointmentEmail({
       patientName: appointment.name,
@@ -193,16 +208,6 @@ async function runBookAppointment(
       date: appointment.date,
       time: appointment.time,
     });
-
-    // Same graceful-degradation as the manual booking route: a null
-    // depositUrl (Stripe unconfigured, or the session failed to create)
-    // never undoes the booking above — the appointment is already saved.
-    const depositUrl = await createDepositCheckoutSession(appointment, origin, locale).catch(
-      (error) => {
-        console.error("Failed to create deposit checkout session (chat tool call):", error);
-        return null;
-      },
-    );
 
     return JSON.stringify({
       success: true,

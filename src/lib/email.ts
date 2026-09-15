@@ -34,6 +34,14 @@ export async function sendAppointmentConfirmationEmail(params: {
   dentistName: string;
   date: string;
   time: string;
+  // Present only when a deposit checkout link was actually created for
+  // this booking (Stripe configured — see createDepositCheckoutSession).
+  // The slot is reserved either way, but the email shouldn't call the
+  // appointment "confirmed" while a deposit is still owed — that's what
+  // separates this from a booking made when Stripe isn't configured at
+  // all, which stays fully confirmed on saving.
+  depositAmountEgp?: number;
+  checkoutUrl?: string | null;
 }): Promise<void> {
   const resend = getResendClient();
   if (!resend) {
@@ -41,20 +49,35 @@ export async function sendAppointmentConfirmationEmail(params: {
     return;
   }
 
+  const depositPending = Boolean(params.checkoutUrl && params.depositAmountEgp);
+
   try {
     await resend.emails.send({
       from: FROM,
       to: params.to,
-      subject: `Appointment confirmed — ${params.date} at ${params.time}`,
+      subject: depositPending
+        ? `Action needed to confirm your appointment — ${params.date} at ${params.time}`
+        : `Appointment confirmed — ${params.date} at ${params.time}`,
       html: `
         <p>Hi ${params.patientName},</p>
-        <p>Your appointment at ${clinicInfo.name} is confirmed:</p>
+        <p>${
+          depositPending
+            ? `We've reserved this slot for you at ${clinicInfo.name}:`
+            : `Your appointment at ${clinicInfo.name} is confirmed:`
+        }</p>
         <ul>
           <li><strong>Service:</strong> ${params.serviceName}</li>
           <li><strong>Dentist:</strong> ${params.dentistName}</li>
           <li><strong>Date:</strong> ${params.date}</li>
           <li><strong>Time:</strong> ${params.time}</li>
         </ul>
+        ${
+          depositPending
+            ? `<p>To confirm it, please pay the EGP ${params.depositAmountEgp} booking deposit:</p>
+        <p><a href="${params.checkoutUrl}">Pay deposit and confirm appointment</a></p>
+        <p>The slot is held for you, but it isn't confirmed until the deposit is received.</p>`
+            : ""
+        }
         <p>Need to reschedule or have a question? Call us at ${clinicInfo.phone}.</p>
         <p>— ${clinicInfo.name}</p>
       `,
