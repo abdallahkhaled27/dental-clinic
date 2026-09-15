@@ -27,6 +27,29 @@ export async function createDepositCheckoutSession(
   const stripe = getStripe();
   if (!stripe) return null;
 
+  // Reuse a still-open session instead of creating a second one — every
+  // caller here (initial booking, the dashboard's retry button, a
+  // reminder email) can run while an earlier session for this same
+  // appointment is still payable, and Checkout sessions stay open for up
+  // to 24h. Without this, a patient who paid on session A but clicked
+  // "Pay deposit" again before the webhook had marked it paid (session A
+  // succeeding doesn't retroactively close out session B) could end up
+  // completing payment on session B too — there's nothing here or on
+  // Stripe's side that would catch or refund a second real charge for one
+  // deposit. Reusing the same session whenever possible is what actually
+  // closes that gap, not just hiding the retry button in the UI for a
+  // while (see DepositStatus.tsx, which only covers the first ~20s).
+  if (appointment.stripeSessionId) {
+    try {
+      const existing = await stripe.checkout.sessions.retrieve(appointment.stripeSessionId);
+      if (existing.status === "open" && existing.url) {
+        return existing.url;
+      }
+    } catch {
+      // Not retrievable (bad/stale id) — fall through and create a fresh one.
+    }
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     payment_method_types: ["card"],
