@@ -16,7 +16,12 @@ import { verifyPatientSession } from "@/lib/patient-auth";
 import { buildBookAppointmentTool, captureLeadTool, checkDateTool } from "@/lib/tools";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
 import { isValidEmail } from "@/lib/validation";
-import { sendAppointmentConfirmationEmail, sendLeadConfirmationEmail } from "@/lib/email";
+import {
+  sendAppointmentConfirmationEmail,
+  sendLeadConfirmationEmail,
+  sendStaffNewAppointmentEmail,
+  sendStaffNewLeadEmail,
+} from "@/lib/email";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type PatientSession = Awaited<ReturnType<typeof verifyPatientSession>>;
@@ -152,6 +157,15 @@ async function runBookAppointment(
       date: appointment.date,
       time: appointment.time,
     });
+    await sendStaffNewAppointmentEmail({
+      patientName: appointment.name,
+      patientEmail: appointment.email,
+      patientPhone: appointment.phone,
+      serviceName: service?.name ?? appointment.serviceId,
+      dentistName: dentist?.name ?? "unknown dentist",
+      date: appointment.date,
+      time: appointment.time,
+    });
 
     return JSON.stringify({
       success: true,
@@ -227,6 +241,11 @@ async function runCaptureLead(argsJson: string): Promise<string> {
         interest: lead.interest,
       });
     }
+    await sendStaffNewLeadEmail({
+      name: lead.name,
+      contact: lead.contact,
+      interest: lead.interest,
+    });
 
     return JSON.stringify({ success: true, id: lead.id });
   } catch (error) {

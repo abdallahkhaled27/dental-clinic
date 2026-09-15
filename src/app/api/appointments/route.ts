@@ -5,7 +5,7 @@ import { getDentists } from "@/lib/dentists";
 import { verifyPatientSession } from "@/lib/patient-auth";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
 import { services } from "@/lib/clinic-data";
-import { sendAppointmentConfirmationEmail } from "@/lib/email";
+import { sendAppointmentConfirmationEmail, sendStaffNewAppointmentEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   // 5 bookings per minute per IP — a real patient books once, not in bulk.
@@ -65,6 +65,15 @@ export async function POST(request: Request) {
       patientName: appointment.name,
       serviceName: service?.name ?? appointment.serviceId,
       dentistName: dentist?.name ?? "your dentist",
+      date: appointment.date,
+      time: appointment.time,
+    });
+    await sendStaffNewAppointmentEmail({
+      patientName: appointment.name,
+      patientEmail: appointment.email,
+      patientPhone: appointment.phone,
+      serviceName: service?.name ?? appointment.serviceId,
+      dentistName: dentist?.name ?? "unknown dentist",
       date: appointment.date,
       time: appointment.time,
     });

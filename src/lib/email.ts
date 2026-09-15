@@ -101,6 +101,80 @@ export async function sendAppointmentReminderEmail(params: {
   }
 }
 
+// Sent to the clinic itself, not a patient — see the two call sites
+// (booking and the AI's book_appointment tool). Without this, staff only
+// find out about a new booking by actively checking /admin; the patient
+// already gets sendAppointmentConfirmationEmail, but nobody on the clinic
+// side gets told anything landed.
+export async function sendStaffNewAppointmentEmail(params: {
+  patientName: string;
+  patientEmail: string;
+  patientPhone: string;
+  serviceName: string;
+  dentistName: string;
+  date: string;
+  time: string;
+}): Promise<void> {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set — skipping staff new-appointment notification.");
+    return;
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: clinicInfo.email,
+      subject: `New booking: ${params.patientName} — ${params.date} at ${params.time}`,
+      html: `
+        <p>A new appointment was just booked:</p>
+        <ul>
+          <li><strong>Patient:</strong> ${params.patientName} (${params.patientEmail}, ${params.patientPhone})</li>
+          <li><strong>Service:</strong> ${params.serviceName}</li>
+          <li><strong>Dentist:</strong> ${params.dentistName}</li>
+          <li><strong>Date:</strong> ${params.date}</li>
+          <li><strong>Time:</strong> ${params.time}</li>
+        </ul>
+      `,
+    });
+  } catch (error) {
+    console.error("Failed to send staff new-appointment notification:", error);
+  }
+}
+
+// Sent to the clinic when the chatbot's capture_lead tool runs — same
+// reasoning as sendStaffNewAppointmentEmail above, but for leads instead
+// of bookings.
+export async function sendStaffNewLeadEmail(params: {
+  name: string;
+  contact: string;
+  interest: string;
+}): Promise<void> {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set — skipping staff new-lead notification.");
+    return;
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: clinicInfo.email,
+      subject: `New lead: ${params.name}`,
+      html: `
+        <p>Someone showed interest through the chat and asked to be followed up with:</p>
+        <ul>
+          <li><strong>Name:</strong> ${params.name}</li>
+          <li><strong>Contact:</strong> ${params.contact}</li>
+          <li><strong>Interested in:</strong> ${params.interest}</li>
+        </ul>
+      `,
+    });
+  } catch (error) {
+    console.error("Failed to send staff new-lead notification:", error);
+  }
+}
+
 export async function sendPasswordResetEmail(params: {
   to: string;
   name: string;
