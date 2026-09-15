@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -44,8 +45,21 @@ const nextConfig: NextConfig = {
         source: "/dashboard/:path*",
         headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
       },
+      // Same two routes again, under the Arabic /ar prefix — these are
+      // the same logical pages, just a different locale, so they need the
+      // identical no-store treatment.
+      {
+        source: "/ar/book/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+      },
+      {
+        source: "/ar/dashboard/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+      },
     ];
   },
 };
 
-export default nextConfig;
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+export default withNextIntl(nextConfig);

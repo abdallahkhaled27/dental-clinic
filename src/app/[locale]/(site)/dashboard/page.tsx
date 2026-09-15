@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
+import { localizeHref } from "@/i18n/routing";
+import { Link } from "@/i18n/navigation";
 import { getAppointmentsForPatient } from "@/lib/appointments-db";
 import { timeSlots } from "@/lib/appointments";
 import { services } from "@/lib/clinic-data";
@@ -13,19 +15,20 @@ export const metadata: Metadata = {
 // Same reasoning as /admin: always fetch fresh, never prerender.
 export const dynamic = "force-dynamic";
 
-function serviceName(serviceId: string) {
-  return services.find((service) => service.id === serviceId)?.name ?? serviceId;
-}
-
 export default async function PatientDashboardPage() {
   // proxy.ts already checks this — this is the second, independent check
   // directly in front of the data itself (same pattern as /admin).
   const session = await verifyPatientSession();
   if (!session) {
-    redirect("/login?next=/dashboard");
+    const locale = await getLocale();
+    redirect(`${localizeHref(locale, "/login")}?next=${encodeURIComponent("/dashboard")}`);
   }
 
-  const appointments = await getAppointmentsForPatient(session.patientId);
+  const [appointments, t, tServices] = await Promise.all([
+    getAppointmentsForPatient(session.patientId),
+    getTranslations("Dashboard"),
+    getTranslations("Services"),
+  ]);
 
   // "9:00 AM" vs "10:00 AM" doesn't sort correctly as plain text — see the
   // identical sort on the admin page for why.
@@ -40,49 +43,50 @@ export default async function PatientDashboardPage() {
           reachable from every page, not just this one, so it isn't
           repeated here. */}
       <div className="border-b border-border pb-6">
-        <h1 className="text-2xl font-bold tracking-tight">My Appointments</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Signed in as {session.email}
+          {t("signedInAs", { email: session.email })}
         </p>
       </div>
 
       {sortedAppointments.length === 0 ? (
         <div className="mt-8 rounded-xl border border-dashed border-border p-10 text-center">
-          <p className="text-sm text-muted-foreground">
-            You don&apos;t have any appointments yet.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
           <Link
             href="/book"
             className="mt-4 inline-block rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
           >
-            Book Appointment
+            {t("bookAppointment")}
           </Link>
         </div>
       ) : (
         <ul className="mt-8 space-y-3">
-          {sortedAppointments.map((appointment) => (
-            <li
-              key={appointment.id}
-              className="rounded-xl border border-border bg-surface p-5 shadow-sm"
-            >
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="font-semibold">
-                  {serviceName(appointment.serviceId)}
-                </span>
-                <span className="text-sm font-medium tabular-nums text-primary">
-                  {appointment.date} at {appointment.time}
-                </span>
-              </div>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                With {appointment.dentist.name} — {appointment.dentist.specialty}
-              </p>
-              {appointment.notes && (
-                <p className="mt-2 border-t border-border pt-2 text-sm text-muted-foreground">
-                  {appointment.notes}
+          {sortedAppointments.map((appointment) => {
+            const serviceName = services.some((s) => s.id === appointment.serviceId)
+              ? tServices(`items.${appointment.serviceId}.name`)
+              : appointment.serviceId;
+            return (
+              <li
+                key={appointment.id}
+                className="rounded-xl border border-border bg-surface p-5 shadow-sm"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="font-semibold">{serviceName}</span>
+                  <span className="text-sm font-medium tabular-nums text-primary">
+                    {appointment.date} at {appointment.time}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {t("with", { dentist: appointment.dentist.name, specialty: appointment.dentist.specialty })}
                 </p>
-              )}
-            </li>
-          ))}
+                {appointment.notes && (
+                  <p className="mt-2 border-t border-border pt-2 text-sm text-muted-foreground">
+                    {appointment.notes}
+                  </p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </main>

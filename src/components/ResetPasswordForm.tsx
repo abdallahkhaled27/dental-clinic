@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
@@ -13,6 +13,8 @@ export default function ResetPasswordForm({ token }: { token: string }) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const t = useTranslations("ResetPassword");
+  const tCommon = useTranslations("Common");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,7 +26,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
 
     if (password !== confirmPassword) {
       setStatus("error");
-      setErrorMessage("Passwords don't match.");
+      setErrorMessage(t("mismatch"));
       return;
     }
 
@@ -40,7 +42,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
 
       if (!response.ok) {
         setStatus("error");
-        setErrorMessage(data.error ?? "Something went wrong. Please try again.");
+        setErrorMessage(data.error ?? tCommon("genericError"));
         return;
       }
 
@@ -48,14 +50,14 @@ export default function ResetPasswordForm({ token }: { token: string }) {
       setTimeout(() => router.push("/login"), 2000);
     } catch {
       setStatus("error");
-      setErrorMessage("Couldn't reach the server. Please try again.");
+      setErrorMessage(tCommon("networkError"));
     }
   }
 
   if (status === "success") {
     return (
       <div className="rounded-xl border border-success-border bg-success-bg p-6 text-center text-sm">
-        <p>Your password has been reset. Redirecting you to login...</p>
+        <p>{t("success")}</p>
       </div>
     );
   }
@@ -66,7 +68,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
         <label htmlFor="password" className={labelClass}>
-          New password
+          {t("newPassword")}
         </label>
         <input
           id="password"
@@ -81,7 +83,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
 
       <div>
         <label htmlFor="confirmPassword" className={labelClass}>
-          Confirm new password
+          {t("confirmPassword")}
         </label>
         <input
           id="confirmPassword"
@@ -98,12 +100,12 @@ export default function ResetPasswordForm({ token }: { token: string }) {
 
       <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
         {isSubmitting && <Spinner />}
-        {isSubmitting ? "Saving..." : "Reset password"}
+        {isSubmitting ? t("saving") : t("submit")}
       </button>
 
       <p className="text-center text-sm text-muted-foreground">
         <Link href="/login" className="font-medium text-primary hover:underline">
-          Back to login
+          {t("backToLogin")}
         </Link>
       </p>
     </form>

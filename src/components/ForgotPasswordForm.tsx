@@ -1,16 +1,20 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
 
-type Status = "idle" | "submitting" | "success" | "error";
+type Status = "idle" | "submitting" | "error" | "success";
 
 export default function ForgotPasswordForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const t = useTranslations("ForgotPassword");
+  const tCommon = useTranslations("Common");
+  const tAuth = useTranslations("Auth");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,24 +34,21 @@ export default function ForgotPasswordForm() {
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         setStatus("error");
-        setErrorMessage(data.error ?? "Something went wrong. Please try again.");
+        setErrorMessage(data.error ?? tCommon("genericError"));
         return;
       }
 
       setStatus("success");
     } catch {
       setStatus("error");
-      setErrorMessage("Couldn't reach the server. Please try again.");
+      setErrorMessage(tCommon("networkError"));
     }
   }
 
   if (status === "success") {
     return (
       <div className="rounded-xl border border-success-border bg-success-bg p-6 text-center text-sm">
-        <p>
-          If an account exists for that email, we&apos;ve sent a link to reset your
-          password. It expires in 1 hour.
-        </p>
+        <p>{t("success")}</p>
       </div>
     );
   }
@@ -58,7 +59,7 @@ export default function ForgotPasswordForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
         <label htmlFor="email" className={labelClass}>
-          Email
+          {tAuth("emailLabel")}
         </label>
         <input
           id="email"
@@ -74,13 +75,13 @@ export default function ForgotPasswordForm() {
 
       <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
         {isSubmitting && <Spinner />}
-        {isSubmitting ? "Sending..." : "Send reset link"}
+        {isSubmitting ? t("sending") : t("sendLink")}
       </button>
 
       <p className="text-center text-sm text-muted-foreground">
-        Remembered your password?{" "}
+        {t("rememberedPassword")}{" "}
         <Link href="/login" className="font-medium text-primary hover:underline">
-          Back to login
+          {t("backToLogin")}
         </Link>
       </p>
     </form>

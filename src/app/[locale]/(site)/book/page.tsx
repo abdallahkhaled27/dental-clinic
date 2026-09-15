@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
+import { localizeHref } from "@/i18n/routing";
 import BookingForm from "@/components/BookingForm";
 import { getDentists } from "@/lib/dentists";
 import { verifyPatientSession } from "@/lib/patient-auth";
@@ -19,20 +21,16 @@ export default async function BookPage() {
   // front of the page itself (same belt-and-suspenders pattern as /admin).
   const session = await verifyPatientSession();
   if (!session) {
-    redirect("/login?next=/book");
+    const locale = await getLocale();
+    redirect(`${localizeHref(locale, "/login")}?next=${encodeURIComponent("/book")}`);
   }
 
-  const dentists = await getDentists();
+  const [dentists, t] = await Promise.all([getDentists(), getTranslations("Booking")]);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-balance">
-        Book an Appointment
-      </h1>
-      <p className="mt-2 text-muted-foreground">
-        Fill out the form below and we&apos;ll confirm your appointment
-        shortly.
-      </p>
+      <h1 className="text-3xl font-bold tracking-tight text-balance">{t("title")}</h1>
+      <p className="mt-2 text-muted-foreground">{t("subtitle")}</p>
       <div className="mt-10 rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
         <BookingForm
           dentists={dentists}

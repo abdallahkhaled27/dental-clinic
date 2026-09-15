@@ -1,18 +1,22 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
 
 type Status = "idle" | "submitting" | "error";
 
+// See the identical note in PatientLoginForm.tsx: redirectTo is a
+// logical, locale-free path, so this stays the locale-aware useRouter.
 export default function PatientRegisterForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const t = useTranslations("Auth");
+  const tCommon = useTranslations("Common");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,7 +40,7 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
 
       if (!response.ok) {
         setStatus("error");
-        setErrorMessage(data.error ?? "Something went wrong. Please try again.");
+        setErrorMessage(data.error ?? tCommon("genericError"));
         return;
       }
 
@@ -44,7 +48,7 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
       router.refresh();
     } catch {
       setStatus("error");
-      setErrorMessage("Couldn't reach the server. Please try again.");
+      setErrorMessage(tCommon("networkError"));
     }
   }
 
@@ -54,7 +58,7 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
         <label htmlFor="name" className={labelClass}>
-          Full Name
+          {t("fullNameLabel")}
         </label>
         <input
           id="name"
@@ -68,7 +72,7 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
 
       <div>
         <label htmlFor="email" className={labelClass}>
-          Email
+          {t("emailLabel")}
         </label>
         <input
           id="email"
@@ -82,7 +86,7 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
 
       <div>
         <label htmlFor="password" className={labelClass}>
-          Password
+          {t("passwordLabel")}
         </label>
         <input
           id="password"
@@ -93,23 +97,23 @@ export default function PatientRegisterForm({ redirectTo }: { redirectTo: string
           disabled={isSubmitting}
           className={fieldClass}
         />
-        <p className="mt-1.5 text-xs text-muted-foreground">At least 8 characters.</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">{t("passwordHint")}</p>
       </div>
 
       {status === "error" && <ErrorBanner message={errorMessage} />}
 
       <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
         {isSubmitting && <Spinner />}
-        {isSubmitting ? "Creating account..." : "Create account"}
+        {isSubmitting ? t("creatingAccount") : t("createAccount")}
       </button>
 
       <p className="text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
+        {t("haveAccount")}{" "}
         <Link
           href={`/login?next=${encodeURIComponent(redirectTo)}`}
           className="font-medium text-primary hover:underline"
         >
-          Sign in
+          {t("signIn")}
         </Link>
       </p>
     </form>

@@ -31,6 +31,7 @@ function buildInstructions(
   dentists: Dentist[],
   patientSession: PatientSession,
   upcomingAppointments: AppointmentWithDentist[],
+  locale: string,
 ): string {
   const today = getClinicToday();
 
@@ -89,7 +90,19 @@ function buildInstructions(
       : `The patient has no upcoming appointments booked right now.`
     : "";
 
-  const base = `You are a friendly, concise virtual receptionist for ${clinicInfo.name}, a dental clinic. Today is ${todayWeekday}, ${today}. Tomorrow is ${tomorrowWeekday}, ${tomorrow} — ${tomorrowStatus}.
+  // The widget sends the page's own locale (see ChatWidget.tsx's useLocale
+  // call) — the model has no other way to know which language the visitor
+  // is reading the page in. Put first and stated as a hard rule rather
+  // than a suggestion, since "be friendly" earlier in the prompt would
+  // otherwise be the strongest signal and it says nothing about language.
+  const languageParagraph =
+    locale === "ar"
+      ? `Respond ONLY in Arabic (Modern Standard Arabic), regardless of what language the patient writes in. This is a hard rule, not a preference.`
+      : `Respond in English, regardless of what language the patient writes in.`;
+
+  const base = `${languageParagraph}
+
+You are a friendly, concise virtual receptionist for ${clinicInfo.name}, a dental clinic. Today is ${todayWeekday}, ${today}. Tomorrow is ${tomorrowWeekday}, ${tomorrow} — ${tomorrowStatus}.
 
 Clinic info:
 - Phone: ${clinicInfo.phone}
@@ -276,6 +289,10 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null);
   const messages: ChatMessage[] | undefined = body?.messages;
+  // Trusted only as a hint for which language to answer in — never used
+  // for anything data- or permission-sensitive, so an unset or bogus
+  // value just falls back to English rather than needing validation.
+  const locale = body?.locale === "ar" ? "ar" : "en";
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return new Response("messages is required", { status: 400 });
@@ -297,7 +314,7 @@ export async function POST(request: Request) {
         (a) => a.date >= getClinicToday(),
       )
     : [];
-  const instructions = buildInstructions(relevantKnowledge, dentists, patientSession, upcomingAppointments);
+  const instructions = buildInstructions(relevantKnowledge, dentists, patientSession, upcomingAppointments, locale);
 
   // The booking tool only exists in the list the model sees when the
   // patient is actually signed in — this is the real enforcement (the

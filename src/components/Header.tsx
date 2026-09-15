@@ -1,9 +1,12 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { clinicInfo } from "@/lib/clinic-data";
+import { Link } from "@/i18n/navigation";
 import PatientNavLink from "./PatientNavLink";
 import MobileMenu from "./MobileMenu";
 
-export default function Header() {
+export default async function Header() {
+  const t = await getTranslations("Nav");
+
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-surface/90 backdrop-blur">
       <div className="relative mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
@@ -13,13 +16,13 @@ export default function Header() {
 
         <nav className="hidden items-center gap-8 text-sm sm:flex">
           <Link href="/#services" className="text-foreground/80 transition-colors hover:text-foreground">
-            Services
+            {t("services")}
           </Link>
           <Link href="/#about" className="text-foreground/80 transition-colors hover:text-foreground">
-            About
+            {t("about")}
           </Link>
           <Link href="/#contact" className="text-foreground/80 transition-colors hover:text-foreground">
-            Contact
+            {t("contact")}
           </Link>
         </nav>
 
@@ -29,7 +32,7 @@ export default function Header() {
             href="/book"
             className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
           >
-            Book Appointment
+            {t("bookAppointment")}
           </Link>
         </div>
 

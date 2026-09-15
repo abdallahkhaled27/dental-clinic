@@ -1,7 +1,10 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { clinicInfo } from "@/lib/clinic-data";
+import { Link } from "@/i18n/navigation";
 
-export default function Hero() {
+export default async function Hero() {
+  const t = await getTranslations("Hero");
+
   return (
     <section className="relative overflow-hidden">
       <div
@@ -13,24 +16,23 @@ export default function Hero() {
           {clinicInfo.name}
         </p>
         <h1 className="mt-4 text-4xl font-bold tracking-tight text-balance sm:text-6xl">
-          {clinicInfo.tagline}
+          {t("tagline")}
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
-          {clinicInfo.name} combines friendly care with modern dentistry.
-          Book your visit today and let us take care of your smile.
+          {t("intro", { clinicName: clinicInfo.name })}
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/book"
             className="rounded-full bg-primary px-7 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
           >
-            Book Appointment
+            {t("bookAppointment")}
           </Link>
           <Link
             href="/#services"
             className="rounded-full border border-border px-7 py-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/5"
           >
-            View Services
+            {t("viewServices")}
           </Link>
         </div>
       </div>

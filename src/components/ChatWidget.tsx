@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -11,6 +12,12 @@ export default function ChatWidget() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isSlow, setIsSlow] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations("Chat");
+  // Sent to /api/chat below so the assistant answers in the same language
+  // the page is in — the AI has no other way to know, since the widget's
+  // own UI chrome (this file) and the model's actual replies are
+  // completely separate translation surfaces.
+  const locale = useLocale();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -39,7 +46,7 @@ export default function ChatWidget() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: nextMessages, locale }),
       });
 
       if (!response.ok || !response.body) {
@@ -72,7 +79,7 @@ export default function ChatWidget() {
         const updated = [...current];
         updated[updated.length - 1] = {
           role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
+          content: t("error"),
         };
         return updated;
       });
@@ -88,11 +95,11 @@ export default function ChatWidget() {
       {isOpen && (
         <div className="fixed bottom-24 right-6 z-20 flex h-[28rem] w-[22rem] max-w-[calc(100vw-3rem)] flex-col rounded-2xl border border-border bg-surface shadow-2xl">
           <div className="flex items-center justify-between rounded-t-2xl border-b border-border bg-primary px-4 py-3.5 text-primary-foreground">
-            <span className="font-medium">Chat with us</span>
+            <span className="font-medium">{t("title")}</span>
             <button
               onClick={() => setIsOpen(false)}
               className="rounded-full p-1 opacity-90 hover:bg-white/15 hover:opacity-100"
-              aria-label="Close chat"
+              aria-label={t("closeLabel")}
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
@@ -102,9 +109,7 @@ export default function ChatWidget() {
 
           <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
             {messages.length === 0 && (
-              <p className="text-muted-foreground">
-                Ask me anything about our services, hours, or location.
-              </p>
+              <p className="text-muted-foreground">{t("emptyState")}</p>
             )}
             {messages.map((message, index) => (
               <div
@@ -123,7 +128,7 @@ export default function ChatWidget() {
                     message.content
                   ) : isStreaming && index === messages.length - 1 ? (
                     isSlow ? (
-                      "Still thinking — this is taking longer than usual…"
+                      t("slow")
                     ) : (
                       <TypingDots />
                     )
@@ -143,14 +148,14 @@ export default function ChatWidget() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Type a message..."
+              placeholder={t("placeholder")}
               className="flex-1 rounded-full border border-border bg-background px-3.5 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               disabled={isStreaming}
             />
             <button
               type="submit"
               disabled={isStreaming || !input.trim()}
-              aria-label="Send message"
+              aria-label={t("sendLabel")}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
@@ -164,7 +169,7 @@ export default function ChatWidget() {
       <button
         onClick={() => setIsOpen((open) => !open)}
         className="fixed bottom-6 right-6 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:bg-primary-hover"
-        aria-label={isOpen ? "Close chat" : "Open chat"}
+        aria-label={isOpen ? t("closeLabel") : t("openLabel")}
       >
         {isOpen ? (
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2}>

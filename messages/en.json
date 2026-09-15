@@ -1,0 +1,157 @@
+{
+  "Nav": {
+    "services": "Services",
+    "about": "About",
+    "contact": "Contact",
+    "bookAppointment": "Book Appointment",
+    "myAppointments": "My Appointments",
+    "logout": "Log out",
+    "login": "Login",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "Hero": {
+    "tagline": "Modern dental care for the whole family",
+    "intro": "{clinicName} combines friendly care with modern dentistry. Book your visit today and let us take care of your smile.",
+    "bookAppointment": "Book Appointment",
+    "viewServices": "View Services"
+  },
+  "About": {
+    "kicker": "Who we are",
+    "title": "About Us",
+    "body": "At {clinicName}, we've been caring for our community for over 15 years. Our team is dedicated to providing gentle, high-quality dental care in a comfortable environment, using modern techniques and equipment to keep your smile healthy at every stage of life."
+  },
+  "Services": {
+    "kicker": "What we offer",
+    "title": "Our Services",
+    "items": {
+      "checkup": {
+        "name": "Routine Checkups & Cleaning",
+        "description": "Comprehensive exams and professional cleaning to keep your smile healthy."
+      },
+      "whitening": {
+        "name": "Teeth Whitening",
+        "description": "Safe, effective whitening treatments for a brighter, more confident smile."
+      },
+      "orthodontics": {
+        "name": "Orthodontics",
+        "description": "Braces and clear aligners for patients of all ages."
+      },
+      "emergency": {
+        "name": "Emergency Care",
+        "description": "Same-day appointments for dental pain, injuries, and urgent issues."
+      },
+      "cosmetic": {
+        "name": "Cosmetic Dentistry",
+        "description": "Veneers, bonding, and smile makeovers tailored to your goals."
+      },
+      "pediatric": {
+        "name": "Pediatric Dentistry",
+        "description": "Gentle, kid-friendly care to build healthy habits early."
+      }
+    }
+  },
+  "Contact": {
+    "title": "Contact Us",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "whatsapp": "Chat on WhatsApp",
+    "whatsappMessage": "Hi {clinicName}, I'd like to ask about an appointment.",
+    "hoursTitle": "Hours",
+    "hoursWeekdays": "Sunday – Thursday",
+    "hoursTime": "9:00 AM – 5:00 PM",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "closed": "Closed"
+  },
+  "Chat": {
+    "title": "Chat with us",
+    "placeholder": "Type a message...",
+    "emptyState": "Ask me anything about our services, hours, or location.",
+    "slow": "Still thinking — this is taking longer than usual…",
+    "error": "Sorry, something went wrong. Please try again.",
+    "openLabel": "Open chat",
+    "closeLabel": "Close chat",
+    "sendLabel": "Send message"
+  },
+  "Footer": {
+    "rights": "All rights reserved."
+  },
+  "Common": {
+    "genericError": "Something went wrong. Please try again.",
+    "networkError": "Couldn't reach the server. Please try again."
+  },
+  "Booking": {
+    "title": "Book an Appointment",
+    "subtitle": "Fill out the form below and we'll confirm your appointment shortly.",
+    "fullName": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "service": "Service",
+    "selectService": "Select a service",
+    "dentist": "Dentist",
+    "selectDentist": "Select a dentist",
+    "date": "Date",
+    "time": "Time",
+    "selectTime": "Select a time",
+    "noSlotsToday": "No slots left for today. Please choose a later date.",
+    "notes": "Notes (optional)",
+    "submit": "Request Appointment",
+    "submitting": "Submitting...",
+    "successTitle": "Appointment requested!",
+    "successBody": "We'll reach out to confirm your appointment shortly.",
+    "bookAnother": "Book another appointment",
+    "networkError": "Couldn't reach the server. Please check your connection and try again."
+  },
+  "Auth": {
+    "loginTitle": "Login",
+    "loginSubtitle": "Sign in to manage your appointments.",
+    "registerTitle": "Create Account",
+    "registerSubtitle": "Sign up to manage your appointments.",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "fullNameLabel": "Full Name",
+    "passwordHint": "At least 8 characters.",
+    "createAccount": "Create account",
+    "creatingAccount": "Creating account...",
+    "haveAccount": "Already have an account?"
+  },
+  "ForgotPassword": {
+    "title": "Forgot password",
+    "subtitle": "Enter your email and we'll send you a link to reset your password.",
+    "sendLink": "Send reset link",
+    "sending": "Sending...",
+    "success": "If an account exists for that email, we've sent a link to reset your password. It expires in 1 hour.",
+    "rememberedPassword": "Remembered your password?",
+    "backToLogin": "Back to login"
+  },
+  "ResetPassword": {
+    "title": "Reset password",
+    "subtitleWithToken": "Choose a new password for your account.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "submit": "Reset password",
+    "saving": "Saving...",
+    "success": "Your password has been reset. Redirecting you to login...",
+    "mismatch": "Passwords don't match.",
+    "missingTokenBefore": "This link is missing its reset token. Request a new one from the",
+    "missingTokenLink": "forgot password",
+    "missingTokenAfter": "page.",
+    "backToLogin": "Back to login"
+  },
+  "Dashboard": {
+    "title": "My Appointments",
+    "signedInAs": "Signed in as {email}",
+    "empty": "You don't have any appointments yet.",
+    "bookAppointment": "Book Appointment",
+    "with": "With {dentist} — {specialty}"
+  }
+}

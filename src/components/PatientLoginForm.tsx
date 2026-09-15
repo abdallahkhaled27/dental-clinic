@@ -1,18 +1,23 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
 
 type Status = "idle" | "submitting" | "error";
 
+// redirectTo is a logical, locale-free path (see the contract note on the
+// login page) — the locale-aware router here adds the right prefix
+// itself, so this must stay next-intl's useRouter, not next/navigation's.
 export default function PatientLoginForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const t = useTranslations("Auth");
+  const tCommon = useTranslations("Common");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,7 +40,7 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
 
       if (!response.ok) {
         setStatus("error");
-        setErrorMessage(data.error ?? "Something went wrong. Please try again.");
+        setErrorMessage(data.error ?? tCommon("genericError"));
         return;
       }
 
@@ -43,7 +48,7 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
       router.refresh();
     } catch {
       setStatus("error");
-      setErrorMessage("Couldn't reach the server. Please try again.");
+      setErrorMessage(tCommon("networkError"));
     }
   }
 
@@ -53,7 +58,7 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
         <label htmlFor="email" className={labelClass}>
-          Email
+          {t("emailLabel")}
         </label>
         <input
           id="email"
@@ -68,10 +73,10 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
       <div>
         <div className="flex items-center justify-between">
           <label htmlFor="password" className={labelClass}>
-            Password
+            {t("passwordLabel")}
           </label>
           <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
-            Forgot password?
+            {t("forgotPassword")}
           </Link>
         </div>
         <input
@@ -88,16 +93,16 @@ export default function PatientLoginForm({ redirectTo }: { redirectTo: string })
 
       <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
         {isSubmitting && <Spinner />}
-        {isSubmitting ? "Signing in..." : "Sign in"}
+        {isSubmitting ? t("signingIn") : t("signIn")}
       </button>
 
       <p className="text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
+        {t("noAccount")}{" "}
         <Link
           href={`/register?next=${encodeURIComponent(redirectTo)}`}
           className="font-medium text-primary hover:underline"
         >
-          Sign up
+          {t("signUp")}
         </Link>
       </p>
     </form>

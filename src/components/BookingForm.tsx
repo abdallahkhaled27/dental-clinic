@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import type { Dentist } from "@prisma/client";
 import { services, getClinicToday, getClinicNowMinutes } from "@/lib/clinic-data";
 import { timeSlots, timeSlotToMinutes } from "@/lib/appointments";
@@ -22,6 +23,9 @@ export default function BookingForm({
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [date, setDate] = useState("");
+  const t = useTranslations("Booking");
+  const tCommon = useTranslations("Common");
+  const tServices = useTranslations("Services");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,7 +55,7 @@ export default function BookingForm({
 
       if (!response.ok) {
         setStatus("error");
-        setErrorMessage(data.error ?? "Something went wrong. Please try again.");
+        setErrorMessage(data.error ?? tCommon("genericError"));
         return;
       }
 
@@ -59,9 +63,7 @@ export default function BookingForm({
       form.reset();
     } catch {
       setStatus("error");
-      setErrorMessage(
-        "Couldn't reach the server. Please check your connection and try again.",
-      );
+      setErrorMessage(t("networkError"));
     }
   }
 
@@ -79,15 +81,13 @@ export default function BookingForm({
           <circle cx="12" cy="12" r="10" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 12.5l2.5 2.5L16 9" />
         </svg>
-        <h2 className="mt-4 text-xl font-semibold">Appointment requested!</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We&apos;ll reach out to confirm your appointment shortly.
-        </p>
+        <h2 className="mt-4 text-xl font-semibold">{t("successTitle")}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{t("successBody")}</p>
         <button
           onClick={() => setStatus("idle")}
           className="mt-6 rounded-full bg-primary px-6 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
         >
-          Book another appointment
+          {t("bookAnother")}
         </button>
       </div>
     );
@@ -109,7 +109,7 @@ export default function BookingForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
-          label="Full Name"
+          label={t("fullName")}
           name="name"
           type="text"
           required
@@ -117,24 +117,24 @@ export default function BookingForm({
           disabled={isSubmitting}
         />
         <Field
-          label="Email"
+          label={t("email")}
           name="email"
           type="email"
           required
           defaultValue={defaultEmail}
           disabled={isSubmitting}
         />
-        <Field label="Phone" name="phone" type="tel" required disabled={isSubmitting} />
+        <Field label={t("phone")} name="phone" type="tel" required disabled={isSubmitting} />
 
         <div>
           <label htmlFor="serviceId" className={labelClass}>
-            Service
+            {t("service")}
           </label>
           <select id="serviceId" name="serviceId" required disabled={isSubmitting} className={fieldClass}>
-            <option value="">Select a service</option>
+            <option value="">{t("selectService")}</option>
             {services.map((service) => (
               <option key={service.id} value={service.id}>
-                {service.name}
+                {tServices(`items.${service.id}.name`)}
               </option>
             ))}
           </select>
@@ -142,10 +142,10 @@ export default function BookingForm({
 
         <div>
           <label htmlFor="dentistId" className={labelClass}>
-            Dentist
+            {t("dentist")}
           </label>
           <select id="dentistId" name="dentistId" required disabled={isSubmitting} className={fieldClass}>
-            <option value="">Select a dentist</option>
+            <option value="">{t("selectDentist")}</option>
             {dentists.map((dentist) => (
               <option key={dentist.id} value={dentist.id}>
                 {dentist.name} — {dentist.specialty}
@@ -156,7 +156,7 @@ export default function BookingForm({
 
         <div>
           <label htmlFor="date" className={labelClass}>
-            Date
+            {t("date")}
           </label>
           <input
             id="date"
@@ -173,10 +173,10 @@ export default function BookingForm({
 
         <div>
           <label htmlFor="time" className={labelClass}>
-            Time
+            {t("time")}
           </label>
           <select id="time" name="time" required disabled={isSubmitting} className={fieldClass}>
-            <option value="">Select a time</option>
+            <option value="">{t("selectTime")}</option>
             {availableTimeSlots.map((slot) => (
               <option key={slot} value={slot}>
                 {slot}
@@ -184,16 +184,14 @@ export default function BookingForm({
             ))}
           </select>
           {date === today && availableTimeSlots.length === 0 && (
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              No slots left for today. Please choose a later date.
-            </p>
+            <p className="mt-1.5 text-xs text-muted-foreground">{t("noSlotsToday")}</p>
           )}
         </div>
       </div>
 
       <div>
         <label htmlFor="notes" className={labelClass}>
-          Notes (optional)
+          {t("notes")}
         </label>
         <textarea
           id="notes"
@@ -208,7 +206,7 @@ export default function BookingForm({
 
       <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
         {isSubmitting && <Spinner />}
-        {isSubmitting ? "Submitting..." : "Request Appointment"}
+        {isSubmitting ? t("submitting") : t("submit")}
       </button>
     </form>
   );

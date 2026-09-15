@@ -61,6 +61,13 @@ body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Arabic pages set dir="rtl" on <html> (see app/layout.tsx) — Cairo has
+   real Arabic glyphs where Geist has none. Scoped to [dir="rtl"] rather
+   than a separate stylesheet so /admin (always ltr) is untouched. */
+html[dir="rtl"] body {
+  font-family: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+}
+
 * {
   border-color: var(--border-color);
 }

@@ -1,16 +1,25 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import { useLocale, useTranslations } from "next-intl";
+import { localizeHref } from "@/i18n/routing";
 
 // next-auth/react's signIn() works standalone here — no <SessionProvider>
 // needed, since we never call useSession() anywhere. Our own auth state
 // (verifyPatientSession, /api/patient/me) is the one source of truth for
 // "is this patient signed in", regardless of which method they used.
 export default function GoogleSignInButton({ redirectTo }: { redirectTo: string }) {
+  const t = useTranslations("Auth");
+  // redirectTo is a logical, locale-free path — but Auth.js's callbackUrl
+  // does a real browser navigation after the OAuth round trip, entirely
+  // outside next-intl's router, so it needs an already-resolved real
+  // href (see localizeHref) rather than the logical one everything else
+  // in this flow uses.
+  const locale = useLocale();
   return (
     <button
       type="button"
-      onClick={() => signIn("google", { callbackUrl: redirectTo })}
+      onClick={() => signIn("google", { callbackUrl: localizeHref(locale, redirectTo) })}
       className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-surface px-6 py-2.5 text-sm font-medium transition-colors hover:bg-foreground/5"
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4">
@@ -31,7 +40,7 @@ export default function GoogleSignInButton({ redirectTo }: { redirectTo: string 
           d="M12 4.75c1.76 0 3.35.61 4.6 1.8l3.44-3.44C17.94 1.19 15.24 0 12 0 7.4 0 3.42 2.62 1.27 6.6l4.01 3.1C6.23 6.86 8.88 4.75 12 4.75z"
         />
       </svg>
-      Continue with Google
+      {t("continueWithGoogle")}
     </button>
   );
 }

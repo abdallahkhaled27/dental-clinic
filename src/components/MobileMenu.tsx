@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import PatientNavLink from "./PatientNavLink";
 
 export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const t = useTranslations("Nav");
 
   return (
     <div className="sm:hidden">
       <button
         onClick={() => setIsOpen((open) => !open)}
-        aria-label={isOpen ? "Close menu" : "Open menu"}
+        aria-label={isOpen ? t("closeMenu") : t("openMenu")}
         aria-expanded={isOpen}
         className="flex h-9 w-9 items-center justify-center rounded-md text-foreground/80 hover:bg-foreground/5 hover:text-foreground"
       >
@@ -30,13 +32,13 @@ export default function MobileMenu() {
         <div className="absolute inset-x-0 top-full border-b border-border bg-surface px-6 py-4 shadow-lg">
           <nav className="flex flex-col gap-4 text-sm">
             <Link href="/#services" onClick={() => setIsOpen(false)} className="text-foreground/80 hover:text-foreground">
-              Services
+              {t("services")}
             </Link>
             <Link href="/#about" onClick={() => setIsOpen(false)} className="text-foreground/80 hover:text-foreground">
-              About
+              {t("about")}
             </Link>
             <Link href="/#contact" onClick={() => setIsOpen(false)} className="text-foreground/80 hover:text-foreground">
-              Contact
+              {t("contact")}
             </Link>
             <div className="border-t border-border pt-4">
               <PatientNavLink />
@@ -46,7 +48,7 @@ export default function MobileMenu() {
               onClick={() => setIsOpen(false)}
               className="rounded-full bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground hover:bg-primary-hover"
             >
-              Book Appointment
+              {t("bookAppointment")}
             </Link>
           </nav>
         </div>
