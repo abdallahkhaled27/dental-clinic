@@ -12,6 +12,7 @@ model Appointment {
   email     String
   phone     String
   serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id])
   dentistId String
   dentist   Dentist  @relation(fields: [dentistId], references: [id])
   // Nullable: appointments booked before patient accounts existed have no
@@ -45,16 +46,38 @@ model Appointment {
   @@unique([patientId, date, time])
 }
 
-// A dentist patients can book with. Kept in the database (unlike `services`,
-// which is a static list in clinic-data.ts) because which dentists exist is
-// operational data the clinic could change, not something baked into the
-// app's code.
+// A dentist patients can book with. Kept in the database because which
+// dentists exist is operational data the clinic could change, not
+// something baked into the app's code.
 model Dentist {
   id           String        @id @default(uuid())
   name         String
   specialty    String
   createdAt    DateTime      @default(now())
   appointments Appointment[]
+}
+
+// A service the clinic offers, shown on the site and offered when
+// booking. Both languages are stored directly on the row — unlike a
+// dentist's name (a proper noun that doesn't translate), a service's
+// name/description is real marketing copy staff can add to or edit any
+// time from /admin, including a brand-new service with no corresponding
+// entry in messages/*.json.
+//
+// `id` is a readable slug derived from the English name (see
+// createService in services.ts), not a random uuid — Appointment.serviceId
+// already stored these exact slugs ("checkup", "whitening", ...) back
+// when this was a static list in clinic-data.ts, so seeding this table
+// with matching ids was what let the FK below get added with zero
+// existing rows to migrate.
+model Service {
+  id            String        @id
+  name          String
+  nameAr        String
+  description   String
+  descriptionAr String
+  createdAt     DateTime      @default(now())
+  appointments  Appointment[]
 }
 
 // One retrievable piece of clinic knowledge (an FAQ answer, a policy, etc.)

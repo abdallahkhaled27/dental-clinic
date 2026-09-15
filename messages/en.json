@@ -47,33 +47,7 @@
   },
   "Services": {
     "kicker": "What we offer",
-    "title": "Our Services",
-    "items": {
-      "checkup": {
-        "name": "Routine Checkups & Cleaning",
-        "description": "Comprehensive exams and professional cleaning to keep your smile healthy."
-      },
-      "whitening": {
-        "name": "Teeth Whitening",
-        "description": "Safe, effective whitening treatments for a brighter, more confident smile."
-      },
-      "orthodontics": {
-        "name": "Orthodontics",
-        "description": "Braces and clear aligners for patients of all ages."
-      },
-      "emergency": {
-        "name": "Emergency Care",
-        "description": "Same-day appointments for dental pain, injuries, and urgent issues."
-      },
-      "cosmetic": {
-        "name": "Cosmetic Dentistry",
-        "description": "Veneers, bonding, and smile makeovers tailored to your goals."
-      },
-      "pediatric": {
-        "name": "Pediatric Dentistry",
-        "description": "Gentle, kid-friendly care to build healthy habits early."
-      }
-    }
+    "title": "Our Services"
   },
   "Contact": {
     "title": "Contact Us",

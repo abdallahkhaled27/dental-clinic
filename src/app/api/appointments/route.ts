@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
 import { createAppointment, getSlotConflictKind } from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
+import { getServices } from "@/lib/services";
 import { verifyPatientSession } from "@/lib/patient-auth";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
-import { services } from "@/lib/clinic-data";
 import { sendAppointmentConfirmationEmail, sendStaffNewAppointmentEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
@@ -38,10 +38,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const dentists = await getDentists();
+  const [dentists, services] = await Promise.all([getDentists(), getServices()]);
   const validationError = validateAppointment(
     body,
     dentists.map((d) => d.id),
+    services.map((s) => s.id),
   );
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });

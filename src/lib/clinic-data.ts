@@ -1,12 +1,10 @@
 // Static content for the clinic website.
 // This is a stand-in for real data until Feature 3 (Database integration),
 // when this will move into the database and be fetched via queries instead.
-
-export type Service = {
-  id: string;
-  name: string;
-  description: string;
-};
+// (Services themselves have since moved into the database — see
+// services.ts and the Service model in schema.prisma — because unlike
+// this file's remaining content, they're something staff actually add to
+// and edit from /admin, not fixed facts about the clinic itself.)
 
 export const clinicInfo = {
   name: "Bright Smile Dental",
@@ -24,45 +22,6 @@ export const clinicInfo = {
 // instead of repeating the literal string, so there's exactly one spot to
 // update if the domain ever changes.
 export const siteUrl = "https://dentalclinic.abdallahyoussef.com";
-
-export const services: Service[] = [
-  {
-    id: "checkup",
-    name: "Routine Checkups & Cleaning",
-    description:
-      "Comprehensive exams and professional cleaning to keep your smile healthy.",
-  },
-  {
-    id: "whitening",
-    name: "Teeth Whitening",
-    description:
-      "Safe, effective whitening treatments for a brighter, more confident smile.",
-  },
-  {
-    id: "orthodontics",
-    name: "Orthodontics",
-    description:
-      "Braces and clear aligners for patients of all ages.",
-  },
-  {
-    id: "emergency",
-    name: "Emergency Care",
-    description:
-      "Same-day appointments for dental pain, injuries, and urgent issues.",
-  },
-  {
-    id: "cosmetic",
-    name: "Cosmetic Dentistry",
-    description:
-      "Veneers, bonding, and smile makeovers tailored to your goals.",
-  },
-  {
-    id: "pediatric",
-    name: "Pediatric Dentistry",
-    description:
-      "Gentle, kid-friendly care to build healthy habits early.",
-  },
-];
 
 export const hours: { day: string; time: string }[] = [
   { day: "Sunday – Thursday", time: "9:00 AM – 5:00 PM" },

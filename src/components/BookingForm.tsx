@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useTranslations } from "next-intl";
-import type { Dentist } from "@prisma/client";
-import { services, getClinicToday, getClinicNowMinutes } from "@/lib/clinic-data";
+import { useLocale, useTranslations } from "next-intl";
+import type { Dentist, Service } from "@prisma/client";
+import { getClinicToday, getClinicNowMinutes } from "@/lib/clinic-data";
 import { timeSlots, timeSlotToMinutes } from "@/lib/appointments";
 import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
@@ -13,10 +13,12 @@ type Status = "idle" | "submitting" | "success" | "error";
 
 export default function BookingForm({
   dentists,
+  services,
   defaultName,
   defaultEmail,
 }: {
   dentists: Dentist[];
+  services: Service[];
   defaultName?: string;
   defaultEmail?: string;
 }) {
@@ -25,7 +27,11 @@ export default function BookingForm({
   const [date, setDate] = useState("");
   const t = useTranslations("Booking");
   const tCommon = useTranslations("Common");
-  const tServices = useTranslations("Services");
+  // Services carry both languages directly on the row now (see the Service
+  // model comment in schema.prisma) — no separate messages/*.json lookup
+  // the way dentist names never needed one, so the option list below picks
+  // between the two columns instead of translating through next-intl.
+  const locale = useLocale();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -134,7 +140,7 @@ export default function BookingForm({
             <option value="">{t("selectService")}</option>
             {services.map((service) => (
               <option key={service.id} value={service.id}>
-                {tServices(`items.${service.id}.name`)}
+                {locale === "ar" ? service.nameAr : service.name}
               </option>
             ))}
           </select>

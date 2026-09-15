@@ -4,7 +4,6 @@ import { notFound, redirect } from "next/navigation";
 import { verifySession } from "@/lib/auth";
 import { getAppointmentById } from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
-import { services } from "@/lib/clinic-data";
 import EditAppointmentForm from "@/components/EditAppointmentForm";
 
 export const metadata: Metadata = {
@@ -12,10 +11,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-function serviceName(serviceId: string) {
-  return services.find((service) => service.id === serviceId)?.name ?? serviceId;
-}
 
 export default async function EditAppointmentPage({
   params,
@@ -48,7 +43,7 @@ export default async function EditAppointmentPage({
 
       <h1 className="mt-4 text-2xl font-bold tracking-tight">Edit Appointment</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        {appointment.name} — {serviceName(appointment.serviceId)}
+        {appointment.name} — {appointment.service.name}
       </p>
 
       <div className="mt-8 rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">

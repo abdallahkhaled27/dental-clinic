@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { validateAppointment, validateAppointmentEdit, timeSlotToMinutes } from "@/lib/appointments";
-import { services } from "@/lib/clinic-data";
 
 const DENTIST_ID = "dentist-1";
 const VALID_DENTIST_IDS = [DENTIST_ID];
-const SERVICE_ID = services[0].id;
+const SERVICE_ID = "service-1";
+const VALID_SERVICE_IDS = [SERVICE_ID];
 
 // Fixed at 2026-01-04T13:31:00Z, which is 2026-01-04 15:31 in Africa/Cairo
 // (a Sunday; no DST in January, so Cairo is a flat UTC+2 here — chosen
@@ -64,57 +64,57 @@ describe("timeSlotToMinutes", () => {
 
 describe("validateAppointment", () => {
   it("accepts a fully valid booking", () => {
-    expect(validateAppointment(validInput(), VALID_DENTIST_IDS)).toBeNull();
+    expect(validateAppointment(validInput(), VALID_DENTIST_IDS, VALID_SERVICE_IDS)).toBeNull();
   });
 
   it("rejects a missing name", () => {
-    expect(validateAppointment(validInput({ name: "" }), VALID_DENTIST_IDS)).toMatch(/name/i);
+    expect(validateAppointment(validInput({ name: "" }), VALID_DENTIST_IDS, VALID_SERVICE_IDS)).toMatch(/name/i);
   });
 
   it("rejects an invalid email", () => {
     expect(
-      validateAppointment(validInput({ email: "not-an-email" }), VALID_DENTIST_IDS),
+      validateAppointment(validInput({ email: "not-an-email" }), VALID_DENTIST_IDS, VALID_SERVICE_IDS),
     ).toMatch(/email/i);
   });
 
   it("rejects an invalid phone", () => {
-    expect(validateAppointment(validInput({ phone: "abc" }), VALID_DENTIST_IDS)).toMatch(/phone/i);
+    expect(validateAppointment(validInput({ phone: "abc" }), VALID_DENTIST_IDS, VALID_SERVICE_IDS)).toMatch(/phone/i);
   });
 
   it("rejects an unknown service", () => {
     expect(
-      validateAppointment(validInput({ serviceId: "nonexistent" }), VALID_DENTIST_IDS),
+      validateAppointment(validInput({ serviceId: "nonexistent" }), VALID_DENTIST_IDS, VALID_SERVICE_IDS),
     ).toMatch(/service/i);
   });
 
   it("rejects a dentist not in the valid list", () => {
     expect(
-      validateAppointment(validInput({ dentistId: "someone-else" }), VALID_DENTIST_IDS),
+      validateAppointment(validInput({ dentistId: "someone-else" }), VALID_DENTIST_IDS, VALID_SERVICE_IDS),
     ).toMatch(/dentist/i);
   });
 
   it("rejects a time not in timeSlots", () => {
-    expect(validateAppointment(validInput({ time: "5:00 PM" }), VALID_DENTIST_IDS)).toMatch(/time/i);
+    expect(validateAppointment(validInput({ time: "5:00 PM" }), VALID_DENTIST_IDS, VALID_SERVICE_IDS)).toMatch(/time/i);
   });
 
   it("rejects a missing date", () => {
-    expect(validateAppointment(validInput({ date: "" }), VALID_DENTIST_IDS)).toMatch(/date/i);
+    expect(validateAppointment(validInput({ date: "" }), VALID_DENTIST_IDS, VALID_SERVICE_IDS)).toMatch(/date/i);
   });
 
   it("rejects a date in the past", () => {
-    expect(validateAppointment(validInput({ date: PAST_DATE }), VALID_DENTIST_IDS)).toMatch(/past/i);
+    expect(validateAppointment(validInput({ date: PAST_DATE }), VALID_DENTIST_IDS, VALID_SERVICE_IDS)).toMatch(/past/i);
   });
 
   it("rejects a closed weekday (Friday)", () => {
     expect(
-      validateAppointment(validInput({ date: FUTURE_CLOSED_DATE }), VALID_DENTIST_IDS),
+      validateAppointment(validInput({ date: FUTURE_CLOSED_DATE }), VALID_DENTIST_IDS, VALID_SERVICE_IDS),
     ).toMatch(/closed/i);
   });
 
   it("rejects a today's slot that has already passed", () => {
     // "now" is fixed at 3:31 PM Cairo — "3:00 PM" is 31 minutes gone.
     expect(
-      validateAppointment(validInput({ date: TODAY, time: "3:00 PM" }), VALID_DENTIST_IDS),
+      validateAppointment(validInput({ date: TODAY, time: "3:00 PM" }), VALID_DENTIST_IDS, VALID_SERVICE_IDS),
     ).toMatch(/already passed/i);
   });
 
@@ -123,14 +123,14 @@ describe("validateAppointment", () => {
     // this whole suite exists for: booking "today, right now" (or a
     // moment ago) must never succeed. See the real bug report this fixed.
     expect(
-      validateAppointment(validInput({ date: TODAY, time: "3:30 PM" }), VALID_DENTIST_IDS),
+      validateAppointment(validInput({ date: TODAY, time: "3:30 PM" }), VALID_DENTIST_IDS, VALID_SERVICE_IDS),
     ).toMatch(/already passed/i);
   });
 
   it("accepts today's slot that hasn't happened yet", () => {
     // "4:00 PM" (960 min) is still ahead of now (931 min).
     expect(
-      validateAppointment(validInput({ date: TODAY, time: "4:00 PM" }), VALID_DENTIST_IDS),
+      validateAppointment(validInput({ date: TODAY, time: "4:00 PM" }), VALID_DENTIST_IDS, VALID_SERVICE_IDS),
     ).toBeNull();
   });
 });

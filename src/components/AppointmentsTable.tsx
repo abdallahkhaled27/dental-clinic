@@ -2,24 +2,19 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { Appointment, Dentist } from "@prisma/client";
-import { services } from "@/lib/clinic-data";
+import type { Appointment, Dentist, Service } from "@prisma/client";
 import { fieldClass, labelClass } from "@/lib/ui";
 import DeleteAppointmentButton from "@/components/DeleteAppointmentButton";
 
 // Deliberately typed against @prisma/client directly, not
-// AppointmentWithDentist from appointments-db.ts — that file also pulls in
+// AppointmentWithRelations from appointments-db.ts — that file also pulls in
 // the Prisma client/Postgres driver, which must never reach a Client
 // Component's bundle (see the note in appointments.ts). A type-only import
 // would likely get erased fine, but there's no need to risk it for a type
 // this simple to redeclare.
-type AppointmentRow = Appointment & { dentist: Dentist };
+type AppointmentRow = Appointment & { dentist: Dentist; service: Service };
 
 type RangeFilter = "all" | "upcoming" | "today" | "past";
-
-function serviceName(serviceId: string) {
-  return services.find((service) => service.id === serviceId)?.name ?? serviceId;
-}
 
 // Filters entirely client-side, live as staff type — the full appointment
 // list is already loaded on the page (no pagination), so there's nothing
@@ -127,7 +122,7 @@ export default function AppointmentsTable({
                     <div>{appointment.email}</div>
                     <div className="text-muted-foreground">{appointment.phone}</div>
                   </td>
-                  <td className="px-4 py-3">{serviceName(appointment.serviceId)}</td>
+                  <td className="px-4 py-3">{appointment.service.name}</td>
                   <td className="px-4 py-3">{appointment.dentist.name}</td>
                   <td className="px-4 py-3 tabular-nums">{appointment.date}</td>
                   <td className="px-4 py-3 tabular-nums">{appointment.time}</td>

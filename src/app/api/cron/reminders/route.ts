@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAppointmentsNeedingReminder, markReminderSent } from "@/lib/appointments-db";
 import { sendAppointmentReminderEmail } from "@/lib/email";
-import { services, getClinicTomorrow } from "@/lib/clinic-data";
+import { getClinicTomorrow } from "@/lib/clinic-data";
 
 // Triggered once a day by Vercel Cron (see vercel.json) — not reachable by
 // a patient or a browser. Anyone who *does* guess the URL still can't
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       await sendAppointmentReminderEmail({
         to: appointment.email,
         patientName: appointment.name,
-        serviceName: services.find((s) => s.id === appointment.serviceId)?.name ?? appointment.serviceId,
+        serviceName: appointment.service.name,
         dentistName: appointment.dentist.name,
         date: appointment.date,
         time: appointment.time,

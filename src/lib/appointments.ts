@@ -1,5 +1,5 @@
 import type { Appointment } from "@prisma/client";
-import { services, closedWeekdays, getClinicToday, getClinicNowMinutes } from "./clinic-data";
+import { closedWeekdays, getClinicToday, getClinicNowMinutes } from "./clinic-data";
 import { isValidEmail, isValidPhone } from "./validation";
 
 // This module holds pure, dependency-free logic (types, constants,
@@ -90,6 +90,7 @@ function validateAppointmentDate(date: string, time: string): string | null {
 export function validateAppointment(
   input: Partial<NewAppointmentInput>,
   validDentistIds: string[],
+  validServiceIds: string[],
 ): string | null {
   if (!input.name?.trim()) return "Name is required.";
   if (!input.email?.trim() || !isValidEmail(input.email)) {
@@ -98,7 +99,7 @@ export function validateAppointment(
   if (!input.phone?.trim() || !isValidPhone(input.phone)) {
     return "A valid phone number is required.";
   }
-  if (!input.serviceId || !services.some((s) => s.id === input.serviceId)) {
+  if (!input.serviceId || !validServiceIds.includes(input.serviceId)) {
     return "Please select a valid service.";
   }
   if (!input.dentistId || !validDentistIds.includes(input.dentistId)) {

@@ -5,7 +5,6 @@ import { localizeHref } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { getAppointmentsForPatient } from "@/lib/appointments-db";
 import { timeSlots } from "@/lib/appointments";
-import { services } from "@/lib/clinic-data";
 import { verifyPatientSession } from "@/lib/patient-auth";
 
 export async function generateMetadata({
@@ -32,10 +31,10 @@ export default async function PatientDashboardPage() {
     redirect(`${localizeHref(locale, "/login")}?next=${encodeURIComponent("/dashboard")}`);
   }
 
-  const [appointments, t, tServices] = await Promise.all([
+  const [appointments, t, locale] = await Promise.all([
     getAppointmentsForPatient(session.patientId),
     getTranslations("Dashboard"),
-    getTranslations("Services"),
+    getLocale(),
   ]);
 
   // "9:00 AM" vs "10:00 AM" doesn't sort correctly as plain text — see the
@@ -70,9 +69,7 @@ export default async function PatientDashboardPage() {
       ) : (
         <ul className="mt-8 space-y-3">
           {sortedAppointments.map((appointment) => {
-            const serviceName = services.some((s) => s.id === appointment.serviceId)
-              ? tServices(`items.${appointment.serviceId}.name`)
-              : appointment.serviceId;
+            const serviceName = locale === "ar" ? appointment.service.nameAr : appointment.service.name;
             return (
               <li
                 key={appointment.id}

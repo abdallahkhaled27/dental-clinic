@@ -4,6 +4,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { localizeHref } from "@/i18n/routing";
 import BookingForm from "@/components/BookingForm";
 import { getDentists } from "@/lib/dentists";
+import { getServices } from "@/lib/services";
 import { verifyPatientSession } from "@/lib/patient-auth";
 
 // Excluded from robots.txt already (see app/robots.ts) — noindex here too
@@ -34,7 +35,11 @@ export default async function BookPage() {
     redirect(`${localizeHref(locale, "/login")}?next=${encodeURIComponent("/book")}`);
   }
 
-  const [dentists, t] = await Promise.all([getDentists(), getTranslations("Booking")]);
+  const [dentists, services, t] = await Promise.all([
+    getDentists(),
+    getServices(),
+    getTranslations("Booking"),
+  ]);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
@@ -43,6 +48,7 @@ export default async function BookPage() {
       <div className="mt-10 rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
         <BookingForm
           dentists={dentists}
+          services={services}
           defaultName={session.name}
           defaultEmail={session.email}
         />

@@ -1,15 +1,16 @@
-import type { Dentist } from "@prisma/client";
+import type { Dentist, Service } from "@prisma/client";
 import { openai } from "@/lib/openai";
-import { clinicInfo, services, hours, getClinicToday, closedWeekdays, getWeekdayInfo } from "@/lib/clinic-data";
+import { clinicInfo, hours, getClinicToday, closedWeekdays, getWeekdayInfo } from "@/lib/clinic-data";
 import { retrieveRelevantKnowledge } from "@/lib/rag";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
 import {
   createAppointment,
   getAppointmentsForPatient,
   getSlotConflictKind,
-  type AppointmentWithDentist,
+  type AppointmentWithRelations,
 } from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
+import { getServices } from "@/lib/services";
 import { validateLead, type NewLeadInput } from "@/lib/leads";
 import { createLead } from "@/lib/leads-db";
 import { verifyPatientSession } from "@/lib/patient-auth";
@@ -29,8 +30,9 @@ type PatientSession = Awaited<ReturnType<typeof verifyPatientSession>>;
 function buildInstructions(
   relevantKnowledge: { topic: string; content: string }[],
   dentists: Dentist[],
+  services: Service[],
   patientSession: PatientSession,
-  upcomingAppointments: AppointmentWithDentist[],
+  upcomingAppointments: AppointmentWithRelations[],
   locale: string,
 ): string {
   const today = getClinicToday();
@@ -82,10 +84,7 @@ function buildInstructions(
   const appointmentsParagraph = patientSession
     ? upcomingAppointments.length > 0
       ? `The patient's upcoming appointments (this is the real, current list — use it to answer questions like "do I have anything on [date]", don't guess):\n${upcomingAppointments
-          .map((a) => {
-            const service = services.find((s) => s.id === a.serviceId)?.name ?? a.serviceId;
-            return `- ${service} with ${a.dentist.name} on ${a.date} at ${a.time}`;
-          })
+          .map((a) => `- ${a.service.name} with ${a.dentist.name} on ${a.date} at ${a.time}`)
           .join("\n")}`
       : `The patient has no upcoming appointments booked right now.`
     : "";
@@ -109,7 +108,7 @@ Clinic info:
 - Email: ${clinicInfo.email}
 - Address: ${clinicInfo.address}
 - Hours: ${hours.map((h) => `${h.day}: ${h.time}`).join("; ")}
-- Services offered: ${services.map((s) => `${s.name} (id: ${s.id})`).join(", ")}
+- Services offered: ${services.map((s) => `${s.name} / Arabic: ${s.nameAr} (id: ${s.id})`).join(", ")}
 - Dentists: ${dentists.map((d) => `${d.name}, ${d.specialty} (id: ${d.id})`).join("; ")}
 
 Answer patient questions using only the information provided to you. Never invent specific numbers — prices, costs, statistics, wait times, or anything similarly precise — that aren't explicitly given above; if asked for one you don't have, say you don't have exact pricing and suggest calling the clinic. Keep responses short (2-4 sentences) and friendly.
@@ -138,6 +137,7 @@ If a patient shows real interest but isn't ready to book right now (asking about
 async function runBookAppointment(
   argsJson: string,
   dentists: Dentist[],
+  services: Service[],
   patientId: string,
 ): Promise<string> {
   let input: Partial<NewAppointmentInput>;
@@ -150,6 +150,7 @@ async function runBookAppointment(
   const validationError = validateAppointment(
     input,
     dentists.map((d) => d.id),
+    services.map((s) => s.id),
   );
   if (validationError) {
     return JSON.stringify({ success: false, error: validationError });
@@ -299,9 +300,10 @@ export async function POST(request: Request) {
   }
 
   const latestQuestion = messages[messages.length - 1]?.content ?? "";
-  const [relevantKnowledge, dentists, patientSession] = await Promise.all([
+  const [relevantKnowledge, dentists, services, patientSession] = await Promise.all([
     retrieveRelevantKnowledge(latestQuestion),
     getDentists(),
+    getServices(),
     verifyPatientSession(),
   ]);
   // Only fetched once we know whether there's actually a patient to fetch
@@ -314,14 +316,21 @@ export async function POST(request: Request) {
         (a) => a.date >= getClinicToday(),
       )
     : [];
-  const instructions = buildInstructions(relevantKnowledge, dentists, patientSession, upcomingAppointments, locale);
+  const instructions = buildInstructions(
+    relevantKnowledge,
+    dentists,
+    services,
+    patientSession,
+    upcomingAppointments,
+    locale,
+  );
 
   // The booking tool only exists in the list the model sees when the
   // patient is actually signed in — this is the real enforcement (the
   // model structurally cannot call a tool that was never offered to it),
   // not just the prompt wording above.
   const tools = patientSession
-    ? [buildBookAppointmentTool(dentists), captureLeadTool, checkDateTool]
+    ? [buildBookAppointmentTool(dentists, services), captureLeadTool, checkDateTool]
     : [captureLeadTool, checkDateTool];
 
   const encoder = new TextEncoder();
@@ -385,6 +394,7 @@ export async function POST(request: Request) {
                   return runBookAppointment(
                     call.arguments,
                     dentists,
+                    services,
                     patientSession.patientId,
                   );
                 }

@@ -7,11 +7,13 @@ import { getClinicToday } from "@/lib/clinic-data";
 import { getLeads } from "@/lib/leads-db";
 import { getPatientsWithAppointmentCount } from "@/lib/patients";
 import { getDentists } from "@/lib/dentists";
+import { getServices } from "@/lib/services";
 import { getKnowledgeChunks } from "@/lib/knowledge-db";
 import { verifySession } from "@/lib/auth";
 import AppointmentsTable from "@/components/AppointmentsTable";
 import DeletePatientButton from "@/components/DeletePatientButton";
 import DeleteDentistButton from "@/components/DeleteDentistButton";
+import DeleteServiceButton from "@/components/DeleteServiceButton";
 import DeleteLeadButton from "@/components/DeleteLeadButton";
 import DeleteKnowledgeButton from "@/components/DeleteKnowledgeButton";
 import LeadStatusSelect from "@/components/LeadStatusSelect";
@@ -37,11 +39,12 @@ export default async function AdminPage() {
     redirect("/admin/login?next=/admin");
   }
 
-  const [appointments, leads, patients, dentists, knowledgeChunks] = await Promise.all([
+  const [appointments, leads, patients, dentists, services, knowledgeChunks] = await Promise.all([
     getAppointments(),
     getLeads(),
     getPatientsWithAppointmentCount(),
     getDentists(),
+    getServices(),
     getKnowledgeChunks(),
   ]);
 
@@ -72,7 +75,7 @@ export default async function AdminPage() {
         </form>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <p className="text-sm text-muted-foreground">Appointments booked</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{sortedAppointments.length}</p>
@@ -88,6 +91,10 @@ export default async function AdminPage() {
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <p className="text-sm text-muted-foreground">Dentists</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{dentists.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">Services</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{services.length}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <p className="text-sm text-muted-foreground">Knowledge base entries</p>
@@ -224,6 +231,54 @@ export default async function AdminPage() {
                         Edit
                       </Link>
                       <DeleteDentistButton dentistId={dentist.id} dentistName={dentist.name} />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold tracking-tight">Services</h2>
+        <Link
+          href="/admin/services/new"
+          className="rounded-full border border-border px-4 py-1.5 text-sm transition-colors hover:bg-foreground/5"
+        >
+          Add service
+        </Link>
+      </div>
+
+      {services.length === 0 ? (
+        <EmptyState message="No services yet." />
+      ) : (
+        <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
+          <table className="w-full min-w-[600px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border bg-foreground/[0.02] text-left text-muted-foreground">
+                <th className="px-4 py-3 font-medium">Name (English)</th>
+                <th className="px-4 py-3 font-medium">Name (Arabic)</th>
+                <th className="px-4 py-3 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {services.map((service) => (
+                <tr
+                  key={service.id}
+                  className="border-b border-border align-top last:border-0 hover:bg-foreground/[0.02]"
+                >
+                  <td className="px-4 py-3 font-medium">{service.name}</td>
+                  <td className="px-4 py-3" dir="rtl">{service.nameAr}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/services/${service.id}/edit`}
+                        className="text-sm text-primary transition-opacity hover:opacity-70"
+                      >
+                        Edit
+                      </Link>
+                      <DeleteServiceButton serviceId={service.id} serviceName={service.name} />
                     </div>
                   </td>
                 </tr>

@@ -1,8 +1,12 @@
-import { getTranslations } from "next-intl/server";
-import { services } from "@/lib/clinic-data";
+import { getTranslations, getLocale } from "next-intl/server";
+import { getServices } from "@/lib/services";
 
 export default async function Services() {
-  const t = await getTranslations("Services");
+  const [t, locale, services] = await Promise.all([
+    getTranslations("Services"),
+    getLocale(),
+    getServices(),
+  ]);
 
   return (
     <section id="services" className="mx-auto max-w-5xl px-6 py-20">
@@ -20,9 +24,11 @@ export default async function Services() {
             key={service.id}
             className="rounded-xl border border-border bg-surface p-6 shadow-sm transition-shadow hover:shadow-md"
           >
-            <h3 className="font-semibold">{t(`items.${service.id}.name`)}</h3>
+            <h3 className="font-semibold">
+              {locale === "ar" ? service.nameAr : service.name}
+            </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              {t(`items.${service.id}.description`)}
+              {locale === "ar" ? service.descriptionAr : service.description}
             </p>
           </div>
         ))}

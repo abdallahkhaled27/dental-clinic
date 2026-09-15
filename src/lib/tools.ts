@@ -1,5 +1,4 @@
-import type { Dentist } from "@prisma/client";
-import { services } from "./clinic-data";
+import type { Dentist, Service } from "@prisma/client";
 import { timeSlots } from "./appointments";
 
 // A "tool" is a function description the model can choose to call instead
@@ -9,10 +8,10 @@ import { timeSlots } from "./appointments";
 // serviceId, dentistId, and time use `enum` here instead of a free-text
 // description.
 //
-// Unlike `services` and `timeSlots` (static, known at import time), dentists
-// live in the database, so this tool's schema can't be a plain constant —
-// it has to be built per-request with whichever dentists currently exist.
-export function buildBookAppointmentTool(dentists: Dentist[]) {
+// Unlike `timeSlots` (static, known at import time), dentists and services
+// both live in the database now, so this tool's schema can't be a plain
+// constant — it has to be built per-request with whichever currently exist.
+export function buildBookAppointmentTool(dentists: Dentist[], services: Service[]) {
   return {
     type: "function" as const,
     name: "book_appointment",

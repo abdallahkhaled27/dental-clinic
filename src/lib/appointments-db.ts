@@ -1,4 +1,4 @@
-import { Prisma, type Appointment, type Dentist } from "@prisma/client";
+import { Prisma, type Appointment, type Dentist, type Service } from "@prisma/client";
 import { prisma } from "./prisma";
 import type { NewAppointmentInput, AppointmentEditInput } from "./appointments";
 
@@ -26,7 +26,7 @@ export function getSlotConflictKind(
   return null;
 }
 
-export type AppointmentWithDentist = Appointment & { dentist: Dentist };
+export type AppointmentWithRelations = Appointment & { dentist: Dentist; service: Service };
 
 // Server-only: writes to Postgres via Prisma. Only import this from Route
 // Handlers, Server Components, or other server-side code — never from a
@@ -55,20 +55,20 @@ export function createAppointment(
   });
 }
 
-export function getAppointments(): Promise<AppointmentWithDentist[]> {
+export function getAppointments(): Promise<AppointmentWithRelations[]> {
   return prisma.appointment.findMany({
     orderBy: { date: "asc" },
-    include: { dentist: true },
+    include: { dentist: true, service: true },
   });
 }
 
 export function getAppointmentsForPatient(
   patientId: string,
-): Promise<AppointmentWithDentist[]> {
+): Promise<AppointmentWithRelations[]> {
   return prisma.appointment.findMany({
     where: { patientId },
     orderBy: { date: "asc" },
-    include: { dentist: true },
+    include: { dentist: true, service: true },
   });
 }
 
@@ -77,10 +77,10 @@ export function getAppointmentsForPatient(
 
 export function getAppointmentById(
   id: string,
-): Promise<AppointmentWithDentist | null> {
+): Promise<AppointmentWithRelations | null> {
   return prisma.appointment.findUnique({
     where: { id },
-    include: { dentist: true },
+    include: { dentist: true, service: true },
   });
 }
 
@@ -110,10 +110,10 @@ export function deleteAppointment(id: string): Promise<Appointment> {
 // anyone.
 export function getAppointmentsNeedingReminder(
   date: string,
-): Promise<AppointmentWithDentist[]> {
+): Promise<AppointmentWithRelations[]> {
   return prisma.appointment.findMany({
     where: { date, reminderSentAt: null },
-    include: { dentist: true },
+    include: { dentist: true, service: true },
   });
 }
 
