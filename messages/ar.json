@@ -100,7 +100,9 @@
     "successTitle": "تم طلب الموعد!",
     "successBody": "سنتواصل معك قريبًا لتأكيد موعدك.",
     "bookAnother": "احجز موعدًا آخر",
-    "networkError": "تعذر الوصول إلى الخادم. برجاء التحقق من اتصالك والمحاولة مرة أخرى."
+    "networkError": "تعذر الوصول إلى الخادم. برجاء التحقق من اتصالك والمحاولة مرة أخرى.",
+    "redirectingToPayment": "جارٍ تحويلك للدفع...",
+    "redirectingToPaymentBody": "تم حجز موعدك — سيتم تحويلك لصفحة آمنة لدفع العربون."
   },
   "Auth": {
     "loginTitle": "تسجيل الدخول",
@@ -150,6 +152,13 @@
     "signedInAs": "مسجّل الدخول باسم {email}",
     "empty": "ليس لديك أي مواعيد بعد.",
     "bookAppointment": "احجز موعد",
-    "with": "مع {dentist} — {specialty}"
+    "with": "مع {dentist} — {specialty}",
+    "depositPaid": "تم دفع العربون",
+    "depositPending": "العربون لم يُدفع بعد",
+    "payDeposit": "ادفع العربون",
+    "depositRedirecting": "جارٍ التحويل...",
+    "depositError": "حدث خطأ ما. برجاء المحاولة مرة أخرى.",
+    "depositSuccessBanner": "شكرًا لك! جارٍ تأكيد الدفع الآن — قد يستغرق ظهوره كمدفوع بعض الوقت.",
+    "depositCanceledBanner": "تم إلغاء عملية الدفع. موعدك لا يزال محجوزًا — يمكنك دفع العربون في أي وقت من القائمة أدناه."
   }
 }

@@ -23,6 +23,16 @@ export const clinicInfo = {
 // update if the domain ever changes.
 export const siteUrl = "https://dentalclinic.abdallahyoussef.com";
 
+// A fixed booking deposit, not the service's full price — this app has
+// no per-service pricing to charge against (see the Service model's own
+// comment on why prices were deliberately never added), and a flat
+// deposit is what actually stops a no-show, which is the point: staff
+// still handle the real service cost at the visit, same as before Stripe
+// existed in this app at all. Stored in whole EGP; Stripe's own amount
+// field wants the smallest currency unit (piastres, 100 to the pound),
+// so callers multiply by 100 — see stripe.ts.
+export const depositAmountEgp = 200;
+
 export const hours: { day: string; time: string }[] = [
   { day: "Sunday – Thursday", time: "9:00 AM – 5:00 PM" },
   { day: "Friday", time: "Closed" },

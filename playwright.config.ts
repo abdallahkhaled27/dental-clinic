@@ -1,5 +1,13 @@
-import "dotenv/config";
+import { config } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
+
+// Match Next.js's own env file precedence (.env.local overrides .env) —
+// plain `dotenv/config` only reads .env, which is why STRIPE_SECRET_KEY
+// (kept in .env.local, alongside the other secrets not meant for git) was
+// invisible to this test process even though the dev server it starts
+// picks it up fine via Next's own loading.
+config({ path: ".env" });
+config({ path: ".env.local", override: true });
 
 // Runs against the real dev server and the real local Postgres (via
 // Docker) — same stack every manual end-to-end check in this project has

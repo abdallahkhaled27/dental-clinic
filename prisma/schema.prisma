@@ -32,6 +32,21 @@ model Appointment {
   // reminder twice if the cron job runs more than once for the same day.
   reminderSentAt DateTime?
 
+  // The appointment itself is created — and the slot reserved via the
+  // constraints below — before payment happens, not after: a Stripe
+  // Checkout redirect can be abandoned, closed, or take a while, and
+  // nothing about that should let someone else grab the same slot in the
+  // meantime. depositStatus starts "pending" and only ever becomes "paid"
+  // from the webhook handler (see api/stripe/webhook) — never from the
+  // client-side redirect back, which confirms nothing on its own; a
+  // patient could close the tab before Stripe ever notifies us.
+  // depositAmount is stored per-row (not just read from an env var at
+  // display time) so a later change to the deposit amount doesn't rewrite
+  // history for appointments already booked under the old one.
+  depositStatus   String  @default("pending")
+  depositAmount   Int?
+  stripeSessionId String? @unique
+
   // Two separate guards, both enforced by Postgres itself (see the note
   // above on why a DB constraint, not just an application check):
   // - one dentist can't be double-booked into the same slot by two

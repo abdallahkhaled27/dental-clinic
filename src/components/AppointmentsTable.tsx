@@ -106,6 +106,7 @@ export default function AppointmentsTable({
                 <th className="px-4 py-3 font-medium">Dentist</th>
                 <th className="px-4 py-3 font-medium">Date</th>
                 <th className="px-4 py-3 font-medium">Time</th>
+                <th className="px-4 py-3 font-medium">Deposit</th>
                 <th className="px-4 py-3 font-medium">Notes</th>
                 <th className="px-4 py-3 font-medium">Booked</th>
                 <th className="px-4 py-3 font-medium"></th>
@@ -126,6 +127,17 @@ export default function AppointmentsTable({
                   <td className="px-4 py-3">{appointment.dentist.name}</td>
                   <td className="px-4 py-3 tabular-nums">{appointment.date}</td>
                   <td className="px-4 py-3 tabular-nums">{appointment.time}</td>
+                  <td className="px-4 py-3">
+                    {appointment.depositStatus === "paid" ? (
+                      <span className="rounded-full bg-success-bg px-2.5 py-1 text-xs font-medium text-success">
+                        Paid
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-foreground/5 px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                        Pending
+                      </span>
+                    )}
+                  </td>
                   <td className="max-w-xs px-4 py-3 text-muted-foreground">
                     {appointment.notes || "—"}
                   </td>

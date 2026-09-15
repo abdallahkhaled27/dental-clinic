@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { getAppointmentsForPatient } from "@/lib/appointments-db";
 import { timeSlots } from "@/lib/appointments";
 import { verifyPatientSession } from "@/lib/patient-auth";
+import PayDepositButton from "@/components/PayDepositButton";
 
 export async function generateMetadata({
   params,
@@ -22,7 +23,11 @@ export async function generateMetadata({
 // Same reasoning as /admin: always fetch fresh, never prerender.
 export const dynamic = "force-dynamic";
 
-export default async function PatientDashboardPage() {
+export default async function PatientDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ deposit?: string }>;
+}) {
   // proxy.ts already checks this — this is the second, independent check
   // directly in front of the data itself (same pattern as /admin).
   const session = await verifyPatientSession();
@@ -31,10 +36,11 @@ export default async function PatientDashboardPage() {
     redirect(`${localizeHref(locale, "/login")}?next=${encodeURIComponent("/dashboard")}`);
   }
 
-  const [appointments, t, locale] = await Promise.all([
+  const [appointments, t, locale, { deposit }] = await Promise.all([
     getAppointmentsForPatient(session.patientId),
     getTranslations("Dashboard"),
     getLocale(),
+    searchParams,
   ]);
 
   // "9:00 AM" vs "10:00 AM" doesn't sort correctly as plain text — see the
@@ -55,6 +61,22 @@ export default async function PatientDashboardPage() {
           {t("signedInAs", { email: session.email })}
         </p>
       </div>
+
+      {/* The redirect back from Stripe (success_url/cancel_url in
+          payments.ts) — a UX nicety only. The webhook, not this query
+          param, is what actually marks a deposit paid (see the model
+          comment on depositStatus), so this banner can't claim more than
+          "we're processing it" even on the success path. */}
+      {deposit === "success" && (
+        <div className="mt-6 rounded-xl border border-success-border bg-success-bg p-4 text-sm">
+          {t("depositSuccessBanner")}
+        </div>
+      )}
+      {deposit === "canceled" && (
+        <div className="mt-6 rounded-xl border border-border bg-surface p-4 text-sm text-muted-foreground">
+          {t("depositCanceledBanner")}
+        </div>
+      )}
 
       {sortedAppointments.length === 0 ? (
         <div className="mt-8 rounded-xl border border-dashed border-border p-10 text-center">
@@ -89,6 +111,20 @@ export default async function PatientDashboardPage() {
                     {appointment.notes}
                   </p>
                 )}
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+                  {appointment.depositStatus === "paid" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success-bg px-2.5 py-1 text-xs font-medium text-success">
+                      {t("depositPaid")}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                        {t("depositPending")}
+                      </span>
+                      <PayDepositButton appointmentId={appointment.id} />
+                    </>
+                  )}
+                </div>
               </li>
             );
           })}

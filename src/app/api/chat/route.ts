@@ -1,6 +1,7 @@
 import type { Dentist, Service } from "@prisma/client";
 import { getOpenAI } from "@/lib/openai";
-import { clinicInfo, hours, getClinicToday, closedWeekdays, getWeekdayInfo } from "@/lib/clinic-data";
+import { clinicInfo, hours, getClinicToday, closedWeekdays, getWeekdayInfo, depositAmountEgp } from "@/lib/clinic-data";
+import { createDepositCheckoutSession } from "@/lib/payments";
 import { retrieveRelevantKnowledge } from "@/lib/rag";
 import { validateAppointment, type NewAppointmentInput } from "@/lib/appointments";
 import {
@@ -64,6 +65,14 @@ function buildInstructions(
     ? `The patient is signed in as ${patientSession.name} (${patientSession.email}). You CAN book appointments directly using the book_appointment tool. Before calling it, make sure you have the patient's name, email, phone, which service, which dentist, a date, and a time — ask for anything missing rather than guessing (the account holder isn't necessarily who the appointment is for). If the patient has no dentist preference, suggest one whose specialty fits what they need. After a successful booking, confirm the details back to the patient. If booking fails, explain the problem in plain language and ask them to try again.`
     : `The patient is NOT signed in, so you CANNOT book appointments in this conversation — there is no booking tool available to you right now. If they want to book, tell them to sign in or create a free account at /login, then come back and ask again.`;
 
+  // Booking a slot and securing it with a deposit are two separate steps
+  // (see the model comment on depositStatus in schema.prisma for why —
+  // the appointment reserves the slot immediately, payment confirms it
+  // later via webhook) — the tool result carries a real depositUrl, not
+  // something to construct or guess at, so this just tells the model
+  // what to do with it once book_appointment returns one.
+  const depositPolicyParagraph = `A successful book_appointment call reserves the slot immediately, but it also requires a ${depositAmountEgp} EGP deposit to stay confirmed. The tool's result includes a depositUrl — after a successful booking, ALWAYS share that exact link with the patient and tell them to complete the ${depositAmountEgp} EGP deposit there to secure it. If depositUrl is null, online payment isn't available right now — tell the patient their appointment is booked and they can pay the deposit at the clinic instead.`;
+
   // Without this, the model has no reason to think it *can't* reschedule
   // or cancel — there's simply no tool for it, but nothing said so
   // explicitly, so it was falling back to "be helpful" and asking for new
@@ -117,6 +126,8 @@ Before confirming that ANY date is available (even in a quick "is tomorrow free?
 
 ${bookingParagraph}
 
+${depositPolicyParagraph}
+
 ${modifyPolicyParagraph}
 
 ${appointmentsParagraph}
@@ -139,6 +150,8 @@ async function runBookAppointment(
   dentists: Dentist[],
   services: Service[],
   patientId: string,
+  origin: string,
+  locale: string,
 ): Promise<string> {
   let input: Partial<NewAppointmentInput>;
   try {
@@ -181,11 +194,23 @@ async function runBookAppointment(
       time: appointment.time,
     });
 
+    // Same graceful-degradation as the manual booking route: a null
+    // depositUrl (Stripe unconfigured, or the session failed to create)
+    // never undoes the booking above — the appointment is already saved.
+    const depositUrl = await createDepositCheckoutSession(appointment, origin, locale).catch(
+      (error) => {
+        console.error("Failed to create deposit checkout session (chat tool call):", error);
+        return null;
+      },
+    );
+
     return JSON.stringify({
       success: true,
       id: appointment.id,
       date: appointment.date,
       time: appointment.time,
+      depositUrl,
+      depositAmountEgp: depositUrl ? depositAmountEgp : null,
     });
   } catch (error) {
     const conflict = getSlotConflictKind(error);
@@ -396,6 +421,8 @@ export async function POST(request: Request) {
                     dentists,
                     services,
                     patientSession.patientId,
+                    new URL(request.url).origin,
+                    locale,
                   );
                 }
                 if (call.name === "capture_lead") {

@@ -100,7 +100,9 @@
     "successTitle": "Appointment requested!",
     "successBody": "We'll reach out to confirm your appointment shortly.",
     "bookAnother": "Book another appointment",
-    "networkError": "Couldn't reach the server. Please check your connection and try again."
+    "networkError": "Couldn't reach the server. Please check your connection and try again.",
+    "redirectingToPayment": "Redirecting you to payment...",
+    "redirectingToPaymentBody": "Your appointment is reserved — you're being sent to a secure page to pay your deposit."
   },
   "Auth": {
     "loginTitle": "Login",
@@ -150,6 +152,13 @@
     "signedInAs": "Signed in as {email}",
     "empty": "You don't have any appointments yet.",
     "bookAppointment": "Book Appointment",
-    "with": "With {dentist} — {specialty}"
+    "with": "With {dentist} — {specialty}",
+    "depositPaid": "Deposit paid",
+    "depositPending": "Deposit pending",
+    "payDeposit": "Pay deposit",
+    "depositRedirecting": "Redirecting...",
+    "depositError": "Something went wrong. Please try again.",
+    "depositSuccessBanner": "Thanks! We're confirming your deposit now — this can take a moment to show as paid below.",
+    "depositCanceledBanner": "Payment was canceled. Your appointment is still reserved — you can pay the deposit any time from the list below."
   }
 }

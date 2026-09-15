@@ -6,6 +6,7 @@ import { getServices } from "@/lib/services";
 import { verifyPatientSession } from "@/lib/patient-auth";
 import { isRateLimited, getClientKey } from "@/lib/rate-limit";
 import { sendAppointmentConfirmationEmail, sendStaffNewAppointmentEmail } from "@/lib/email";
+import { createDepositCheckoutSession } from "@/lib/payments";
 
 export async function POST(request: Request) {
   // 5 bookings per minute per IP — a real patient books once, not in bulk.
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: Partial<NewAppointmentInput>;
+  let body: Partial<NewAppointmentInput> & { locale?: string };
   try {
     body = await request.json();
   } catch {
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  const locale = body.locale === "ar" ? "ar" : "en";
 
   const [dentists, services] = await Promise.all([getDentists(), getServices()]);
   const validationError = validateAppointment(
@@ -79,7 +81,22 @@ export async function POST(request: Request) {
       time: appointment.time,
     });
 
-    return NextResponse.json({ appointment }, { status: 201 });
+    // The appointment is already saved and confirmed by email at this
+    // point regardless of what happens below — same reasoning as the
+    // email calls above never blocking the booking: a deposit link is a
+    // next step, not a condition of the booking having succeeded. A null
+    // checkoutUrl (Stripe unconfigured) just means the client shows the
+    // normal success screen instead of redirecting to pay.
+    const checkoutUrl = await createDepositCheckoutSession(
+      appointment,
+      new URL(request.url).origin,
+      locale,
+    ).catch((error) => {
+      console.error("Failed to create deposit checkout session:", error);
+      return null;
+    });
+
+    return NextResponse.json({ appointment, checkoutUrl }, { status: 201 });
   } catch (error) {
     const conflict = getSlotConflictKind(error);
     if (conflict === "dentist") {

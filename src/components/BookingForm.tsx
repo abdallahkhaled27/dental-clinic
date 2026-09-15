@@ -9,7 +9,7 @@ import { fieldClass, labelClass, primaryButtonClass } from "@/lib/ui";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
 
-type Status = "idle" | "submitting" | "success" | "error";
+type Status = "idle" | "submitting" | "success" | "redirecting" | "error";
 
 export default function BookingForm({
   dentists,
@@ -49,6 +49,7 @@ export default function BookingForm({
       date: formData.get("date") as string,
       time: formData.get("time") as string,
       notes: formData.get("notes") as string,
+      locale,
     };
 
     try {
@@ -65,12 +66,35 @@ export default function BookingForm({
         return;
       }
 
+      // The appointment is already booked at this point either way — a
+      // missing checkoutUrl just means Stripe isn't configured in this
+      // environment (see createDepositCheckoutSession), not that
+      // anything failed. Redirecting to Stripe's hosted page, not
+      // fetching it into an iframe or similar: card entry is entirely
+      // Stripe's problem this way, never something this app's own code
+      // touches.
+      if (data.checkoutUrl) {
+        setStatus("redirecting");
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+
       setStatus("success");
       form.reset();
     } catch {
       setStatus("error");
       setErrorMessage(t("networkError"));
     }
+  }
+
+  if (status === "redirecting") {
+    return (
+      <div className="rounded-xl border border-border bg-surface p-8 text-center">
+        <Spinner className="mx-auto h-10 w-10 text-primary" />
+        <h2 className="mt-4 text-xl font-semibold">{t("redirectingToPayment")}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{t("redirectingToPaymentBody")}</p>
+      </div>
+    );
   }
 
   if (status === "success") {
