@@ -49,6 +49,20 @@ export function timeSlotToMinutes(time: string): number {
   return hour * 60 + Number(match[2]);
 }
 
+// How far away an appointment is from right now, in hours (negative once
+// it's already passed) — used to decide whether cancelling it still
+// refunds the deposit (see cancellationNoticeHours in clinic-data.ts).
+// `date`/`today` are both clinic-local YYYY-MM-DD strings, so the day
+// count between them is timezone-agnostic without needing to know
+// Cairo's actual UTC offset — only the time-of-day part needs the real
+// clinic clock, via getClinicNowMinutes/timeSlotToMinutes.
+export function hoursUntilAppointment(date: string, time: string): number {
+  const daysUntil =
+    (Date.parse(date) - Date.parse(getClinicToday())) / (24 * 60 * 60 * 1000);
+  const minutesUntil = daysUntil * 24 * 60 + (timeSlotToMinutes(time) - getClinicNowMinutes());
+  return minutesUntil / 60;
+}
+
 // Shared by validateAppointment and validateAppointmentEdit — the
 // date+time pair has to pass the same checks regardless of who's booking
 // or whether it's a new booking or a reschedule: not in the past, not on

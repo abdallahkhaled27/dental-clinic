@@ -179,6 +179,9 @@ export default function AppointmentsTable({
                       <DeleteAppointmentButton
                         appointmentId={appointment.id}
                         patientName={appointment.name}
+                        date={appointment.date}
+                        time={appointment.time}
+                        depositStatus={appointment.depositStatus}
                       />
                     </div>
                   </td>

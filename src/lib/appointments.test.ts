@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { validateAppointment, validateAppointmentEdit, timeSlotToMinutes } from "@/lib/appointments";
+import {
+  validateAppointment,
+  validateAppointmentEdit,
+  timeSlotToMinutes,
+  hoursUntilAppointment,
+} from "@/lib/appointments";
 
 const DENTIST_ID = "dentist-1";
 const VALID_DENTIST_IDS = [DENTIST_ID];
@@ -59,6 +64,27 @@ describe("timeSlotToMinutes", () => {
 
   it("returns NaN for unparseable input", () => {
     expect(timeSlotToMinutes("not a time")).toBeNaN();
+  });
+});
+
+describe("hoursUntilAppointment", () => {
+  // "Now" is fixed at 2026-01-04 15:31 Cairo (see NOW above).
+  it("counts a same-day slot in minutes-to-hours", () => {
+    expect(hoursUntilAppointment(TODAY, "4:00 PM")).toBeCloseTo(29 / 60, 5);
+  });
+
+  it("counts a future date across multiple days", () => {
+    // 2026-01-08 10:00 AM is 4 days out, minus 3h31m already past today's
+    // start-of-comparison point.
+    expect(hoursUntilAppointment(FUTURE_OPEN_DATE, "10:00 AM")).toBeCloseTo(5429 / 60, 5);
+  });
+
+  it("is exactly 24 hours for a slot a day out at the same time", () => {
+    expect(hoursUntilAppointment("2026-01-05", "3:31 PM")).toBeCloseTo(24, 5);
+  });
+
+  it("returns a negative number for a slot already in the past", () => {
+    expect(hoursUntilAppointment(PAST_DATE, "10:00 AM")).toBeLessThan(0);
   });
 });
 

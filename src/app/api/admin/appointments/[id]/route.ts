@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
-import { validateAppointmentEdit, type AppointmentEditInput } from "@/lib/appointments";
+import {
+  validateAppointmentEdit,
+  hoursUntilAppointment,
+  type AppointmentEditInput,
+} from "@/lib/appointments";
 import {
   updateAppointment,
   deleteAppointment,
@@ -9,6 +13,7 @@ import {
 } from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
 import { refundDeposit } from "@/lib/payments";
+import { cancellationNoticeHours } from "@/lib/clinic-data";
 
 export async function PATCH(
   request: Request,
@@ -80,13 +85,15 @@ export async function DELETE(
     return NextResponse.json({ error: "Appointment not found." }, { status: 404 });
   }
 
-  // A paid deposit must be refunded before the booking it belongs to is
-  // deleted — otherwise the money stays collected with nothing left in
-  // the DB pointing back at it. Deliberately blocks the cancellation
-  // (rather than deleting anyway and logging the failure) since silently
-  // keeping a patient's money is worse than a staff member having to
-  // retry.
-  if (appointment.depositStatus === "paid") {
+  // A paid deposit only gets refunded on cancellation with at least
+  // cancellationNoticeHours' notice — matching the cancellation-policy
+  // knowledge base entry patients already see. Refunding unconditionally
+  // would mean the deposit never actually costs anything to no-show or
+  // cancel last-minute, defeating the entire point of charging one.
+  const withinNoticeWindow =
+    hoursUntilAppointment(appointment.date, appointment.time) >= cancellationNoticeHours;
+
+  if (appointment.depositStatus === "paid" && withinNoticeWindow) {
     try {
       await refundDeposit(appointment);
     } catch (error) {
@@ -103,7 +110,10 @@ export async function DELETE(
 
   try {
     await deleteAppointment(id);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      depositForfeited: appointment.depositStatus === "paid" && !withinNoticeWindow,
+    });
   } catch (error) {
     console.error("Failed to cancel appointment:", error);
     return NextResponse.json(

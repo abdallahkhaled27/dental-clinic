@@ -33,6 +33,15 @@ export const siteUrl = "https://dentalclinic.abdallahyoussef.com";
 // so callers multiply by 100 — see stripe.ts.
 export const depositAmountEgp = 200;
 
+// Matches the cancellation-policy knowledge base entry staff see in the
+// chatbot's FAQ ("at least 24 hours' notice"): a deposit is only refunded
+// on cancellation if there's still at least this much notice before the
+// appointment. Cancel with less notice (or after the appointment's own
+// time, i.e. a no-show) and the deposit is kept — otherwise it never
+// actually deters a last-minute no-show, which is the entire reason it
+// exists (see the comment on depositAmountEgp).
+export const cancellationNoticeHours = 24;
+
 export const hours: { day: string; time: string }[] = [
   { day: "Sunday – Thursday", time: "9:00 AM – 5:00 PM" },
   { day: "Friday", time: "Closed" },
