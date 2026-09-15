@@ -14,5 +14,11 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Scoped to src/ — Vitest's default glob also matches *.spec.ts,
+    // which is exactly the convention the Playwright suite under
+    // tests/e2e uses (see playwright.config.ts); without this, `npm test`
+    // tries to run those through Vitest too and fails immediately, since
+    // they call Playwright's own test()/expect(), not Vitest's.
+    include: ["src/**/*.test.ts"],
   },
 });
