@@ -4,7 +4,7 @@ import { getStripe } from "./stripe";
 import { prisma } from "./prisma";
 import { depositAmountEgp, clinicInfo } from "./clinic-data";
 
-export const depositStatuses = ["pending", "paid"] as const;
+export const depositStatuses = ["pending", "paid", "refunded"] as const;
 export type DepositStatus = (typeof depositStatuses)[number];
 
 // Shared by the manual booking route, the "pay deposit" retry endpoint,
@@ -76,5 +76,45 @@ export async function markDepositPaid(appointmentId: string): Promise<void> {
   await prisma.appointment.update({
     where: { id: appointmentId },
     data: { depositStatus: "paid" },
+  });
+}
+
+// Called from the admin cancel-appointment route before the appointment
+// row is deleted — a paid deposit must never just vanish along with the
+// booking. Throws (rather than swallowing the error) so the caller can
+// stop the cancellation instead of deleting a row whose deposit was
+// never actually returned to the patient.
+//
+// The DB is updated to "refunded" as soon as Stripe confirms the refund,
+// separately from the row deletion that follows — if that deletion then
+// fails for some unrelated reason, the appointment survives with
+// depositStatus already "refunded", so a retry (or a human reading the
+// admin table) doesn't see it as still owing a refund.
+export async function refundDeposit(appointment: Appointment): Promise<void> {
+  if (appointment.depositStatus !== "paid") return;
+
+  const stripe = getStripe();
+  if (!stripe) {
+    throw new Error("Stripe isn't configured — can't refund this deposit automatically.");
+  }
+  if (!appointment.stripeSessionId) {
+    throw new Error("This appointment is marked paid but has no Stripe session on record.");
+  }
+
+  const session = await stripe.checkout.sessions.retrieve(appointment.stripeSessionId);
+  if (!session.payment_intent) {
+    throw new Error("The Stripe session for this appointment has no payment to refund.");
+  }
+
+  await stripe.refunds.create({
+    payment_intent:
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.payment_intent.id,
+  });
+
+  await prisma.appointment.update({
+    where: { id: appointment.id },
+    data: { depositStatus: "refunded" },
   });
 }

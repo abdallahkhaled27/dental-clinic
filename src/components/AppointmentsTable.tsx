@@ -132,6 +132,10 @@ export default function AppointmentsTable({
                       <span className="rounded-full bg-success-bg px-2.5 py-1 text-xs font-medium text-success">
                         Paid
                       </span>
+                    ) : appointment.depositStatus === "refunded" ? (
+                      <span className="rounded-full bg-danger-bg px-2.5 py-1 text-xs font-medium text-danger">
+                        Refunded
+                      </span>
                     ) : (
                       <span className="rounded-full bg-foreground/5 px-2.5 py-1 text-xs font-medium text-muted-foreground">
                         Pending

@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { validateAppointmentEdit, type AppointmentEditInput } from "@/lib/appointments";
-import { updateAppointment, deleteAppointment, getSlotConflictKind } from "@/lib/appointments-db";
+import {
+  updateAppointment,
+  deleteAppointment,
+  getAppointmentById,
+  getSlotConflictKind,
+} from "@/lib/appointments-db";
 import { getDentists } from "@/lib/dentists";
+import { refundDeposit } from "@/lib/payments";
 
 export async function PATCH(
   request: Request,
@@ -68,6 +74,32 @@ export async function DELETE(
   }
 
   const { id } = await params;
+
+  const appointment = await getAppointmentById(id);
+  if (!appointment) {
+    return NextResponse.json({ error: "Appointment not found." }, { status: 404 });
+  }
+
+  // A paid deposit must be refunded before the booking it belongs to is
+  // deleted — otherwise the money stays collected with nothing left in
+  // the DB pointing back at it. Deliberately blocks the cancellation
+  // (rather than deleting anyway and logging the failure) since silently
+  // keeping a patient's money is worse than a staff member having to
+  // retry.
+  if (appointment.depositStatus === "paid") {
+    try {
+      await refundDeposit(appointment);
+    } catch (error) {
+      console.error("Failed to refund deposit before cancelling appointment:", error);
+      return NextResponse.json(
+        {
+          error:
+            "This appointment has a paid deposit that couldn't be refunded automatically, so it wasn't cancelled. Please refund it in the Stripe dashboard and try again.",
+        },
+        { status: 502 },
+      );
+    }
+  }
 
   try {
     await deleteAppointment(id);
