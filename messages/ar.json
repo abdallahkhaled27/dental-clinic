@@ -155,6 +155,7 @@
     "with": "مع {dentist} — {specialty}",
     "depositPaid": "تم دفع العربون",
     "depositPending": "العربون لم يُدفع بعد",
+  "depositConfirming": "جارٍ تأكيد الدفع…",
     "payDeposit": "ادفع العربون",
     "depositRedirecting": "جارٍ التحويل...",
     "depositError": "حدث خطأ ما. برجاء المحاولة مرة أخرى.",

@@ -155,6 +155,7 @@
     "with": "With {dentist} — {specialty}",
     "depositPaid": "Deposit paid",
     "depositPending": "Deposit pending",
+  "depositConfirming": "Confirming payment…",
     "payDeposit": "Pay deposit",
     "depositRedirecting": "Redirecting...",
     "depositError": "Something went wrong. Please try again.",

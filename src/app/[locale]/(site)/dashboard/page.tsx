@@ -6,7 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { getAppointmentsForPatient } from "@/lib/appointments-db";
 import { timeSlots } from "@/lib/appointments";
 import { verifyPatientSession } from "@/lib/patient-auth";
-import PayDepositButton from "@/components/PayDepositButton";
+import DepositStatus from "@/components/DepositStatus";
 
 export async function generateMetadata({
   params,
@@ -49,6 +49,18 @@ export default async function PatientDashboardPage({
     if (a.date !== b.date) return a.date < b.date ? -1 : 1;
     return timeSlots.indexOf(a.time) - timeSlots.indexOf(b.time);
   });
+
+  // Landing here with ?deposit=success right after Stripe doesn't mean the
+  // webhook has actually landed yet (see DepositStatus's comment) — the
+  // most recently *created* still-pending appointment is treated as "the
+  // one just paid for" so its badge shows a brief confirming state instead
+  // of immediately inviting a second payment for the same booking.
+  const justPaidId =
+    deposit === "success"
+      ? appointments
+          .filter((a) => a.depositStatus === "pending")
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]?.id
+      : undefined;
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
@@ -112,18 +124,11 @@ export default async function PatientDashboardPage({
                   </p>
                 )}
                 <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
-                  {appointment.depositStatus === "paid" ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-success-bg px-2.5 py-1 text-xs font-medium text-success">
-                      {t("depositPaid")}
-                    </span>
-                  ) : (
-                    <>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                        {t("depositPending")}
-                      </span>
-                      <PayDepositButton appointmentId={appointment.id} />
-                    </>
-                  )}
+                  <DepositStatus
+                    appointmentId={appointment.id}
+                    depositStatus={appointment.depositStatus}
+                    justPaid={appointment.id === justPaidId}
+                  />
                 </div>
               </li>
             );
